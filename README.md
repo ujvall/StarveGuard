@@ -216,6 +216,6 @@ python -m tests.test_workloads
 | **Desktop GUI** | Tkinter / ttk (Canvas Gantt charts, Treeviews) |
 | **Data & Plotting** | CSV, Matplotlib |
 
-**Author:** Ujval Sai (`24BCE2748`)  
+**Author:** [Ujval Sai](https://github.com/ujvall)  
 **Repository:** [https://github.com/ujvall/StarveGuard](https://github.com/ujvall/StarveGuard)  
 *Academic Operating Systems simulation prototype for priority scheduling starvation mitigation.*
