@@ -63,10 +63,10 @@ Aging reduces the process's numerical priority value (**lower number = higher pr
 | **Source Module** | `scheduler.normal_priority_scheduler` | `scheduler.priority_scheduler` |
 | **Preemption** | Yes (per discrete time unit) | Yes (per discrete time unit) |
 | **Priority State** | Static (Fixed throughout) | Dynamic (Adaptive aging applied per cycle) |
-| **Bypass Tracking** | ❌ No | ✅ Yes (`bypass_count`) |
-| **Starvation Detection** | ❌ No | ✅ Yes ($\text{Score} \ge 20$) |
-| **Aging Interventions** | ❌ None | ✅ Multi-tier boost based on score tiers |
-| **Event Auditing** | ❌ None | ✅ Timestamped log of old $\to$ new priorities & scores |
+| **Bypass Tracking** | No | Yes (`bypass_count`) |
+| **Starvation Detection** | No | Yes ($\text{Score} \ge 20$) |
+| **Aging Interventions** | None | Multi-tier boost based on score tiers |
+| **Event Auditing** | None | Timestamped log of old $\to$ new priorities & scores |
 | **Fairness Evaluation** | Post-simulation | Post-simulation (Jain's Fairness Index) |
 
 ---
