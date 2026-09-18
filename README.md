@@ -52,9 +52,9 @@ Consider a representative scenario:
 
 Under standard preemptive priority scheduling:
 
-1. At $t = 0$, both P1 and P2 arrive. P2 (priority 3) is selected over P1 (priority 6).
-2. At $t = 5$, P2 finishes. However, P3 arrives with priority 3, immediately capturing the CPU.
-3. At $t = 10$, P3 finishes. P4 arrives with priority 3, once again preempting P1.
+1. At time $t = 0$, both P1 and P2 arrive. P2 (priority 3) is selected over P1 (priority 6).
+2. At time $t = 5$, P2 finishes. However, P3 arrives with priority 3, immediately capturing the CPU.
+3. At time $t = 10$, P3 finishes. P4 arrives with priority 3, once again preempting P1.
 4. P1 remains blocked until $t = 15$, having been bypassed by three successive higher-priority jobs despite arriving at $t = 0$.
 
 If higher-priority processes arrive continuously, P1 will experience indefinite postponement, resulting in severe response-time degradation and reduced system fairness.
@@ -93,12 +93,12 @@ flowchart TD
 
 ### Execution Lifecycle
 
-1. **Ready Queue Polling:** At discrete time $t$, identify all processes with $\text{arrival\_time} \le t$ and $\text{remaining\_time} > 0$.
+1. **Ready Queue Polling:** At discrete time $t$, identify all processes with `arrival_time <= t` and `remaining_time > 0`.
 2. **Initial Candidate Selection:** Identify the highest-priority process using the tuple `(current_priority, arrival_time, pid)`.
 3. **Starvation Evaluation:** Calculate the starvation score for every process currently waiting in the ready queue.
 4. **Adaptive Priority Aging:** For processes with a starvation score $\ge 10$, apply a graduated priority boost relative to the original priority. If the score reaches or exceeds 20, set the `starvation_detected` flag. Record any priority modification to the aging intervention log.
 5. **Dynamic Process Re-selection:** Re-evaluate the ready queue using updated priorities so that aged processes can immediately compete for the CPU.
-6. **Execution Step:** Execute the selected process for one time unit ($\text{remaining\_time} \leftarrow \text{remaining\_time} - 1$, $\text{time} \leftarrow \text{time} + 1$).
+6. **Execution Step:** Execute the selected process for one time unit (`remaining_time = remaining_time - 1`, `time = time + 1`).
 7. **State Tracking:** Increment `waiting_time` and `bypass_count` for all ready processes that were not selected during this time unit.
 8. **Completion Handling:** When a process completes, record its completion time, turnaround time, and response time.
 
@@ -135,10 +135,10 @@ When a process experiences elevated starvation scores, StarveGuard temporarily i
 
 | Starvation Score Range | Priority Boost | Effective Priority Calculation |
 | :---: | :---: | :--- |
-| **0 – 9** | `0` | $\text{current} = \text{original\_priority}$ |
-| **10 – 19** | `1` | $\text{current} = \max(1, \text{original\_priority} - 1)$ |
-| **20 – 29** | `2` | $\text{current} = \max(1, \text{original\_priority} - 2)$ |
-| **30+** | `3` | $\text{current} = \max(1, \text{original\_priority} - 3)$ |
+| **0 – 9** | `0` | `current = original_priority` |
+| **10 – 19** | `1` | `current = max(1, original_priority - 1)` |
+| **20 – 29** | `2` | `current = max(1, original_priority - 2)` |
+| **30+** | `3` | `current = max(1, original_priority - 3)` |
 
 ### Aging Rules
 
@@ -176,26 +176,26 @@ StarveGuard calculates performance and fairness metrics through `metrics/calcula
 ### Aggregate Metrics
 
 - **Average Waiting Time:** Mean duration processes spent waiting in the ready queue:
-  $$\text{Average Waiting Time} = \frac{1}{n} \sum_{i=1}^n \text{waiting\_time}_i$$
+  $$\text{Average Waiting Time} = \frac{1}{n} \sum_{i=1}^n WT_i$$
 - **Average Turnaround Time:** Mean total time elapsed from process arrival to final completion:
-  $$\text{Average Turnaround Time} = \frac{1}{n} \sum_{i=1}^n \text{turnaround\_time}_i$$
+  $$\text{Average Turnaround Time} = \frac{1}{n} \sum_{i=1}^n TAT_i$$
 - **Average Response Time:** Mean time from arrival to first CPU allocation:
-  $$\text{Average Response Time} = \frac{1}{n} \sum_{i=1}^n \text{response\_time}_i$$
+  $$\text{Average Response Time} = \frac{1}{n} \sum_{i=1}^n RT_i$$
 - **Maximum Waiting Time:** Peak waiting time observed across all processes:
-  $$\text{Maximum Waiting Time} = \max_{1 \le i \le n}(\text{waiting\_time}_i)$$
+  $$\text{Maximum Waiting Time} = \max_{1 \le i \le n}(WT_i)$$
 - **Jain's Fairness Index:** Measures system throughput fairness based on process service efficiency:
-  $$J(x_1, x_2, \dots, x_n) = \frac{\left( \sum_{i=1}^n x_i \right)^2}{n \cdot \sum_{i=1}^n x_i^2}, \quad \text{where } x_i = \frac{\text{burst\_time}_i}{\text{turnaround\_time}_i}$$
+  $$J(x_1, x_2, \dots, x_n) = \frac{\left( \sum_{i=1}^n x_i \right)^2}{n \cdot \sum_{i=1}^n x_i^2}, \quad \text{where } x_i = \frac{\text{Burst}_i}{\text{Turnaround}_i}$$
   A score of $1.0$ represents optimal fairness, while lower scores indicate disproportionate resource starvation.
-- **Starved Processes Count:** Number of processes where $\text{starvation\_score} \ge 20$.
+- **Starved Processes Count:** Number of processes where $\text{Starvation Score} \ge 20$.
 - **Protected Processes Count:** Number of processes that received at least one aging priority adjustment.
 - **Aging Interventions Count:** Total number of priority adjustment events recorded during execution.
 
 ### Process-Level Metrics
 
 - **Completion Time ($C_i$):** Discrete time unit at which the process finishes its total burst.
-- **Turnaround Time ($TAT_i$):** Total elapsed lifecycle time: $TAT_i = C_i - \text{arrival\_time}_i$.
-- **Waiting Time ($WT_i$):** Total time spent waiting in the ready queue: $WT_i = TAT_i - \text{burst\_time}_i$.
-- **Response Time ($RT_i$):** Time elapsed between arrival and initial CPU acquisition: $RT_i = \text{first\_run\_time}_i - \text{arrival\_time}_i$.
+- **Turnaround Time ($TAT_i$):** Total elapsed lifecycle time: $TAT_i = C_i - \text{Arrival}_i$.
+- **Waiting Time ($WT_i$):** Total time spent waiting in the ready queue: $WT_i = TAT_i - \text{Burst}_i$.
+- **Response Time ($RT_i$):** Time elapsed between arrival and initial CPU acquisition: $RT_i = \text{FirstRun}_i - \text{Arrival}_i$.
 - **Bypass Count:** Number of times the process was ready but another process was scheduled.
 - **Aging Adjustments:** Number of priority boost interventions applied to the process.
 - **Original Priority:** Static priority assigned upon creation.
@@ -352,23 +352,23 @@ The project includes a representative demonstration workload where aging alters 
 
 ### Execution Trace Under Normal Priority
 
-1. $t = 0 \to 5$: P2 runs to completion. P1 waits in ready queue.
-2. $t = 5 \to 10$: P3 arrives at $t=5$ (priority 3) and executes to completion. P1 continues waiting.
-3. $t = 10 \to 15$: P4 arrives at $t=10$ (priority 3) and executes to completion. P1 continues waiting.
-4. $t = 15 \to 30$: P1 finally executes and finishes at $t = 30$.
+1. At time $t = 0 \to 5$: P2 runs to completion. P1 waits in ready queue.
+2. At time $t = 5 \to 10$: P3 arrives at $t=5$ (priority 3) and executes to completion. P1 continues waiting.
+3. At time $t = 10 \to 15$: P4 arrives at $t=10$ (priority 3) and executes to completion. P1 continues waiting.
+4. At time $t = 15 \to 30$: P1 finally executes and finishes at $t = 30$.
 - **Gantt Sequence:** `| P2 (0-5) | P3 (5-10) | P4 (10-15) | P1 (15-30) |`
 
 ### Execution Trace Under StarveGuard
 
-1. $t = 0 \to 4$: P2 executes. P1 waits.
-2. $t = 4$: P1 has $\text{waiting} = 4$, $\text{bypass} = 4$. $\text{Score} = 4 + (4 \times 2) = 12 \ge 10$. Aging boosts P1's priority from **6 to 5**.
-3. $t = 5$: P2 completes. P3 arrives with priority 3 and begins execution.
-4. $t = 7$: P1 has $\text{waiting} = 7$, $\text{bypass} = 7$. $\text{Score} = 7 + (7 \times 2) = 21 \ge 20$. Starvation is detected. Aging boosts P1's priority from **5 to 4**.
-5. $t = 10$: P3 completes. P4 arrives with priority 3. At this instant, P1 has $\text{waiting} = 10$, $\text{bypass} = 10$. $\text{Score} = 10 + (10 \times 2) = 30 \ge 30$. Aging boosts P1's priority from **4 to 3**.
+1. At time $t = 0 \to 4$: P2 executes. P1 waits.
+2. At time $t = 4$: P1 has waiting = 4, bypass = 4. $\text{Score} = 4 + (4 \times 2) = 12 \ge 10$. Aging boosts P1's priority from **6 to 5**.
+3. At time $t = 5$: P2 completes. P3 arrives with priority 3 and begins execution.
+4. At time $t = 7$: P1 has waiting = 7, bypass = 7. $\text{Score} = 7 + (7 \times 2) = 21 \ge 20$. Starvation is detected. Aging boosts P1's priority from **5 to 4**.
+5. At time $t = 10$: P3 completes. P4 arrives with priority 3. At this instant, P1 has waiting = 10, bypass = 10. $\text{Score} = 10 + (10 \times 2) = 30 \ge 30$. Aging boosts P1's priority from **4 to 3**.
 6. **Preemption Event:** Both P1 and P4 have priority 3. Because P1 arrived earlier ($t = 0$ vs $t = 10$), **P1 preempts P4 and takes the CPU at $t = 10$**.
-7. $t = 10 \to 14$: P1 executes for 4 units.
-8. $t = 14$: P4 has $\text{waiting} = 4$, $\text{bypass} = 4$. $\text{Score} = 12 \ge 10$. P4 is boosted to priority 2 and preempts P1, running from $t = 14 \to 19$.
-9. $t = 19 \to 30$: P1 resumes with priority 3 and completes its remaining burst at $t = 30$.
+7. At time $t = 10 \to 14$: P1 executes for 4 units.
+8. At time $t = 14$: P4 has waiting = 4, bypass = 4. $\text{Score} = 12 \ge 10$. P4 is boosted to priority 2 and preempts P1, running from $t = 14 \to 19$.
+9. At time $t = 19 \to 30$: P1 resumes with priority 3 and completes its remaining burst at $t = 30$.
 - **Gantt Sequence:** `| P2 (0-5) | P3 (5-10) | P1 (10-14) | P4 (14-19) | P1 (19-30) |`
 
 ### Comparative Results for Demo Workload
