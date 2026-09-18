@@ -1,0 +1,5 @@
+Workload,Normal Avg Waiting,StarveGuard Avg Waiting,Normal Avg Turnaround,StarveGuard Avg Turnaround,Normal Avg Response,StarveGuard Avg Response,Normal Max Waiting,StarveGuard Max Waiting,Normal Fairness,StarveGuard Fairness,Starved Processes,Protected Processes,Aging Interventions
+Workload 1,15.0,16.333333333333332,25.0,26.333333333333332,15.0,11.666666666666666,25,25,0.5830731876517516,0.6297376093294459,2,3,7
+Workload 2,6.25,6.25,11.25,11.25,5.25,5.25,11,11,0.7653181056451054,0.7653181056451054,2,3,7
+Workload 3,23.333333333333332,24.666666666666668,40.0,41.333333333333336,23.333333333333332,16.666666666666668,40,40,0.6356764928193499,0.6716118960421801,2,3,7
+Workload 4,0.0,0.0,3.0,3.0,0.0,0.0,0,0,1.0,1.0,0,0,0

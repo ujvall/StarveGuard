@@ -1,0 +1,77 @@
+STARVEGUARD EXPERIMENT RESULTS
+==============================
+
+Workload 1
+----------
+Normal Priority:
+Average Waiting: 15.00
+Average Turnaround: 25.00
+Average Response: 15.00
+Maximum Waiting: 25
+Fairness: 0.583
+
+StarveGuard:
+Average Waiting: 16.33
+Average Turnaround: 26.33
+Average Response: 11.67
+Maximum Waiting: 25
+Fairness: 0.630
+Starved Processes: 2
+Aging Interventions: 7
+
+
+Workload 2
+----------
+Normal Priority:
+Average Waiting: 6.25
+Average Turnaround: 11.25
+Average Response: 5.25
+Maximum Waiting: 11
+Fairness: 0.765
+
+StarveGuard:
+Average Waiting: 6.25
+Average Turnaround: 11.25
+Average Response: 5.25
+Maximum Waiting: 11
+Fairness: 0.765
+Starved Processes: 2
+Aging Interventions: 7
+
+
+Workload 3
+----------
+Normal Priority:
+Average Waiting: 23.33
+Average Turnaround: 40.00
+Average Response: 23.33
+Maximum Waiting: 40
+Fairness: 0.636
+
+StarveGuard:
+Average Waiting: 24.67
+Average Turnaround: 41.33
+Average Response: 16.67
+Maximum Waiting: 40
+Fairness: 0.672
+Starved Processes: 2
+Aging Interventions: 7
+
+
+Workload 4
+----------
+Normal Priority:
+Average Waiting: 0.00
+Average Turnaround: 3.00
+Average Response: 0.00
+Maximum Waiting: 0
+Fairness: 1.000
+
+StarveGuard:
+Average Waiting: 0.00
+Average Turnaround: 3.00
+Average Response: 0.00
+Maximum Waiting: 0
+Fairness: 1.000
+Starved Processes: 0
+Aging Interventions: 0
