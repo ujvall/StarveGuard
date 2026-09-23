@@ -21,7 +21,7 @@ except Exception:
 
 style.configure(
     "Treeview.Heading",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     relief="raised",
     background="#D9D9D9",
     foreground="#000000",
@@ -33,7 +33,7 @@ style.map(
 )
 style.configure(
     "Treeview",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     rowheight=22,
     background="#FFFFFF",
     fieldbackground="#FFFFFF",
@@ -42,26 +42,28 @@ style.configure(
     borderwidth=1
 )
 
-header_frame = tk.Frame(root, bg="#0B192C")
+header_frame = tk.Frame(root, bg="#0A246A", bd=2, relief="groove")
 header_frame.pack(side="top", fill="x")
 
 title_label = tk.Label(
     header_frame,
     text="STARVEGUARD",
-    font=("Segoe UI", 18, "bold"),
+    font=("Tahoma", 16, "bold"),
     fg="#FFFFFF",
-    bg="#0B192C"
+    bg="#0A246A",
+    anchor="w"
 )
-title_label.pack(pady=(14, 2))
+title_label.pack(anchor="w", padx=20, pady=(10, 2))
 
 subtitle_label = tk.Label(
     header_frame,
     text="Adaptive Process Starvation Detection and Prevention System",
-    font=("Segoe UI", 9),
-    fg="#94A3B8",
-    bg="#0B192C"
+    font=("Tahoma", 9),
+    fg="#A6CAF0",
+    bg="#0A246A",
+    anchor="w"
 )
-subtitle_label.pack(pady=(0, 14))
+subtitle_label.pack(anchor="w", padx=20, pady=(0, 10))
 
 status_frame = tk.Frame(root, bg="#F0F0F0", bd=1, relief="sunken")
 status_frame.pack(side="bottom", fill="x")
@@ -70,7 +72,7 @@ status_label = tk.Label(
     status_frame,
     text="Ready",
     anchor="w",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     bg="#F0F0F0",
     fg="#475569",
     padx=14,
@@ -116,7 +118,7 @@ main_canvas.bind_all("<MouseWheel>", on_mousewheel)
 input_card = tk.LabelFrame(
     scrollable_frame,
     text="  PROCESS INPUTS & EXECUTION CONTROLS  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=20,
@@ -131,7 +133,7 @@ for col_idx, h in enumerate(headers):
     tk.Label(
         input_card,
         text=h,
-        font=("Segoe UI", 9, "bold"),
+        font=("Tahoma", 9, "bold"),
         fg="#000000",
         bg="#F0F0F0"
     ).grid(row=0, column=col_idx, padx=15, pady=(0, 6))
@@ -143,18 +145,18 @@ for i in range(4):
     tk.Label(
         input_card,
         text=f"P{i + 1}",
-        font=("Segoe UI", 9, "bold"),
+        font=("Tahoma", 9, "bold"),
         fg="#1D4ED8",
         bg="#F0F0F0"
     ).grid(row=i + 1, column=0, padx=15, pady=3)
 
-    arrival = tk.Entry(input_card, width=14, font=("Segoe UI", 9), justify="center", bg="#FFFFFF", fg="#000000", relief="sunken", bd=2)
+    arrival = tk.Entry(input_card, width=14, font=("Tahoma", 9), justify="center", bg="#FFFFFF", fg="#000000", relief="sunken", bd=2)
     arrival.grid(row=i + 1, column=1, padx=15, pady=3)
 
-    burst = tk.Entry(input_card, width=14, font=("Segoe UI", 9), justify="center", bg="#FFFFFF", fg="#000000", relief="sunken", bd=2)
+    burst = tk.Entry(input_card, width=14, font=("Tahoma", 9), justify="center", bg="#FFFFFF", fg="#000000", relief="sunken", bd=2)
     burst.grid(row=i + 1, column=2, padx=15, pady=3)
 
-    priority = tk.Entry(input_card, width=14, font=("Segoe UI", 9), justify="center", bg="#FFFFFF", fg="#000000", relief="sunken", bd=2)
+    priority = tk.Entry(input_card, width=14, font=("Tahoma", 9), justify="center", bg="#FFFFFF", fg="#000000", relief="sunken", bd=2)
     priority.grid(row=i + 1, column=3, padx=15, pady=3)
 
     entries.append((arrival, burst, priority))
@@ -166,7 +168,7 @@ btn_container.grid(row=5, column=0, columnspan=4, sticky="w", pady=(12, 4))
 run_button = tk.Button(
     btn_container,
     text="▶  Run Simulation",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     bg="#1D4ED8",
     fg="#FFFFFF",
     activebackground="#1E40AF",
@@ -182,7 +184,7 @@ run_button.pack(side="left", padx=(0, 8))
 demo_button = tk.Button(
     btn_container,
     text="⚡ Load Demo Workload",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     bg="#0D9488",
     fg="#FFFFFF",
     activebackground="#0F766E",
@@ -198,7 +200,7 @@ demo_button.pack(side="left", padx=8)
 reset_button = tk.Button(
     btn_container,
     text="↺  Clear / Reset",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     bg="#F0F0F0",
     fg="#000000",
     activebackground="#E0E0E0",
@@ -221,7 +223,7 @@ dashboard_frame.columnconfigure(2, weight=1)
 normal_card = tk.LabelFrame(
     dashboard_frame,
     text="  NORMAL PRIORITY METRICS  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=16,
@@ -244,7 +246,7 @@ for idx, (title_text, key) in enumerate(normal_metric_keys):
     tk.Label(
         normal_card,
         text=title_text,
-        font=("Segoe UI", 9, "bold"),
+        font=("Tahoma", 9, "bold"),
         fg="#000000",
         bg="#F0F0F0",
         anchor="w"
@@ -253,7 +255,7 @@ for idx, (title_text, key) in enumerate(normal_metric_keys):
     val_lbl = tk.Label(
         normal_card,
         text="-",
-        font=("Segoe UI", 9),
+        font=("Tahoma", 9),
         fg="#000000",
         bg="#F0F0F0",
         anchor="e"
@@ -264,7 +266,7 @@ for idx, (title_text, key) in enumerate(normal_metric_keys):
 starveguard_card = tk.LabelFrame(
     dashboard_frame,
     text="  STARVEGUARD ADAPTIVE METRICS  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=16,
@@ -290,7 +292,7 @@ for idx, (title_text, key) in enumerate(starveguard_metric_keys):
     tk.Label(
         starveguard_card,
         text=title_text,
-        font=("Segoe UI", 9, "bold"),
+        font=("Tahoma", 9, "bold"),
         fg="#000000",
         bg="#F0F0F0",
         anchor="w"
@@ -299,7 +301,7 @@ for idx, (title_text, key) in enumerate(starveguard_metric_keys):
     val_lbl = tk.Label(
         starveguard_card,
         text="-",
-        font=("Segoe UI", 9),
+        font=("Tahoma", 9),
         fg="#000000",
         bg="#F0F0F0",
         anchor="e"
@@ -310,7 +312,7 @@ for idx, (title_text, key) in enumerate(starveguard_metric_keys):
 comparison_card = tk.LabelFrame(
     dashboard_frame,
     text="  COMPARISON (STARVEGUARD - NORMAL)  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=16,
@@ -333,7 +335,7 @@ for idx, (title_text, key) in enumerate(comparison_metric_keys):
     tk.Label(
         comparison_card,
         text=title_text,
-        font=("Segoe UI", 9, "bold"),
+        font=("Tahoma", 9, "bold"),
         fg="#000000",
         bg="#F0F0F0",
         anchor="w"
@@ -342,7 +344,7 @@ for idx, (title_text, key) in enumerate(comparison_metric_keys):
     val_lbl = tk.Label(
         comparison_card,
         text="-",
-        font=("Segoe UI", 9),
+        font=("Tahoma", 9),
         fg="#000000",
         bg="#F0F0F0",
         anchor="e"
@@ -353,7 +355,7 @@ for idx, (title_text, key) in enumerate(comparison_metric_keys):
 definitions_card = tk.LabelFrame(
     scrollable_frame,
     text="  METRIC DEFINITIONS  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=16,
@@ -401,7 +403,7 @@ for title, desc, r, c in metric_definitions:
     tk.Label(
         item_frame,
         text=f"• {title}:",
-        font=("Segoe UI", 8, "bold"),
+        font=("Tahoma", 8, "bold"),
         fg="#1D4ED8",
         bg="#F0F0F0"
     ).pack(side="left")
@@ -409,7 +411,7 @@ for title, desc, r, c in metric_definitions:
     tk.Label(
         item_frame,
         text=f" {desc}",
-        font=("Segoe UI", 8),
+        font=("Tahoma", 8),
         fg="#000000",
         bg="#F0F0F0"
     ).pack(side="left")
@@ -417,7 +419,7 @@ for title, desc, r, c in metric_definitions:
 timeline_card = tk.LabelFrame(
     scrollable_frame,
     text="  SCHEDULING TIMELINE (GANTT CHARTS)  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=18,
@@ -430,7 +432,7 @@ timeline_card.pack(fill="x", padx=20, pady=6)
 tk.Label(
     timeline_card,
     text="Normal Priority Timeline:",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0"
 ).pack(anchor="w", pady=(0, 2))
@@ -441,7 +443,7 @@ normal_canvas.pack(fill="x", pady=(0, 8))
 tk.Label(
     timeline_card,
     text="StarveGuard Adaptive Timeline:",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#1D4ED8",
     bg="#F0F0F0"
 ).pack(anchor="w", pady=(2, 2))
@@ -455,7 +457,7 @@ legend_frame.pack(anchor="w", pady=(6, 2))
 tk.Label(
     legend_frame,
     text="Legend:",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0"
 ).pack(side="left", padx=(0, 10))
@@ -479,7 +481,7 @@ for pid, color in legend_items:
     tk.Label(
         item_box,
         text=pid,
-        font=("Segoe UI", 9),
+        font=("Tahoma", 9),
         fg="#000000",
         bg="#F0F0F0"
     ).pack(side="left")
@@ -493,7 +495,7 @@ tables_container.columnconfigure(1, weight=2)
 details_card = tk.LabelFrame(
     tables_container,
     text="  STARVEGUARD PROCESS-LEVEL METRICS  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=12,
@@ -534,7 +536,7 @@ process_tree.pack(fill="both", expand=True)
 events_card = tk.LabelFrame(
     tables_container,
     text="  STARVEGUARD AGING INTERVENTION EVENTS  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=12,
@@ -575,7 +577,7 @@ aging_scroll.pack(side="right", fill="y")
 analysis_card = tk.LabelFrame(
     scrollable_frame,
     text="  EXPERIMENTAL ANALYSIS (PRE-GENERATED BENCHMARK GRAPHS)  ",
-    font=("Segoe UI", 9, "bold"),
+    font=("Tahoma", 9, "bold"),
     fg="#000000",
     bg="#F0F0F0",
     padx=18,
@@ -588,7 +590,7 @@ analysis_card.pack(fill="x", padx=20, pady=(6, 20))
 tk.Label(
     analysis_card,
     text="View comparative benchmark charts generated across diverse OS workload suites:",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     fg="#000000",
     bg="#F0F0F0"
 ).pack(anchor="w", pady=(0, 8))
@@ -599,7 +601,7 @@ analysis_btn_frame.pack(anchor="w")
 btn_graph_waiting = tk.Button(
     analysis_btn_frame,
     text="📈 Show Waiting Time Graph",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     bg="#F0F0F0",
     fg="#000000",
     activebackground="#E0E0E0",
@@ -615,7 +617,7 @@ btn_graph_waiting.pack(side="left", padx=(0, 10))
 btn_graph_response = tk.Button(
     analysis_btn_frame,
     text="📊 Show Response Time Graph",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     bg="#F0F0F0",
     fg="#000000",
     activebackground="#E0E0E0",
@@ -631,7 +633,7 @@ btn_graph_response.pack(side="left", padx=10)
 btn_graph_fairness = tk.Button(
     analysis_btn_frame,
     text="⚖️ Show Fairness Graph",
-    font=("Segoe UI", 9),
+    font=("Tahoma", 9),
     bg="#F0F0F0",
     fg="#000000",
     activebackground="#E0E0E0",
@@ -692,7 +694,7 @@ def draw_gantt_chart(canvas, gantt_data, title):
             width / 2,
             27,
             text="No timeline data",
-            font=("Segoe UI", 9, "italic"),
+            font=("Tahoma", 9, "italic"),
             fill="#94A3B8"
         )
         return
@@ -736,18 +738,18 @@ def draw_gantt_chart(canvas, gantt_data, title):
                 (x1 + x2) / 2,
                 (y1 + y2) / 2,
                 text=pid,
-                font=("Segoe UI", 9, "bold"),
+                font=("Tahoma", 9, "bold"),
                 fill=text_color
             )
 
         if start not in drawn_time_points:
             canvas.create_line(x1, y2, x1, y2 + 5, fill="#000000")
-            canvas.create_text(x1, y2 + 13, text=str(start), font=("Segoe UI", 8), fill="#000000")
+            canvas.create_text(x1, y2 + 13, text=str(start), font=("Tahoma", 8), fill="#000000")
             drawn_time_points.add(start)
 
         if end not in drawn_time_points:
             canvas.create_line(x2, y2, x2, y2 + 5, fill="#000000")
-            canvas.create_text(x2, y2 + 13, text=str(end), font=("Segoe UI", 8), fill="#000000")
+            canvas.create_text(x2, y2 + 13, text=str(end), font=("Tahoma", 8), fill="#000000")
             drawn_time_points.add(end)
 
 
@@ -872,7 +874,7 @@ def show_graph(graph_name):
     close_btn = tk.Button(
         top,
         text="Close",
-        font=("Segoe UI", 9, "bold"),
+        font=("Tahoma", 9, "bold"),
         bg="#F0F0F0",
         fg="#000000",
         relief="raised",
