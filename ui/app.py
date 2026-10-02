@@ -47,13 +47,13 @@ header_frame.pack(side="top", fill="x")
 
 title_label = tk.Label(
     header_frame,
-    text="STARVEGUARD",
+    text="StarveGaurd",
     font=("Tahoma", 16, "bold"),
     fg="#FFFFFF",
     bg="#0A246A",
     anchor="w"
 )
-title_label.pack(anchor="w", padx=20, pady=(10, 2))
+title_label.pack(anchor="w", padx=32, pady=(10, 2))
 
 subtitle_label = tk.Label(
     header_frame,
@@ -63,7 +63,7 @@ subtitle_label = tk.Label(
     bg="#0A246A",
     anchor="w"
 )
-subtitle_label.pack(anchor="w", padx=20, pady=(0, 10))
+subtitle_label.pack(anchor="w", padx=32, pady=(0, 10))
 
 status_frame = tk.Frame(root, bg="#F0F0F0", bd=1, relief="sunken")
 status_frame.pack(side="bottom", fill="x")

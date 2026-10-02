@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StarveGuard — Adaptive OS Process Scheduling & Starvation Prevention</title>
+    <meta name="description" content="A deterministic CPU process scheduling engine that eliminates thread starvation in preemptive priority systems through bypass tracking and adaptive aging." />
+        <!-- FOUC Prevention: body invisible until CSS is painted -->
+    <style>body { opacity: 0; }</style>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            document.body.style.transition = 'opacity 0.2s ease';
+            document.body.style.opacity = '1';
+          });
+        });
+      });
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar" id="navbar">
+      <div class="nav-inner">
+        <a href="#" class="brand">
+          <span class="brand-glyph"></span>
+          <span class="brand-name">StarveGuard</span>
+        </a>
+        <nav class="nav-menu">
+          <a href="#simulator" class="nav-item">Interactive Simulator</a>
+          <a href="#architecture" class="nav-item">Core Engine</a>
+          <a href="#calculator" class="nav-item">Score Calculator</a>
+          <a href="#benchmarks" class="nav-item">Empirical Data</a>
+          <a href="#showcase" class="nav-item">UI Suite</a>
+        </nav>
+        <div class="nav-controls">
+          <a href="https://github.com/ujvall/StarveGuard" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary">
+            GitHub
+          </a>
+          <a href="#simulator" class="btn btn-sm btn-primary">
+            Run Simulation
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="container hero-container">
+          <h1 class="hero-headline">
+            Adaptive CPU scheduling<br>
+            Zero process starvation
+          </h1>
+
+          <p class="hero-paragraph">
+            StarveGuard reconciles strict preemptive priority arbitration with starvation immunity.
+            By tracking ready-queue bypass frequencies and applying dynamic aging feedback, lower-priority threads
+            break out of starvation traps without disrupting high-priority throughput.
+          </p>
+
+          <div class="hero-actions">
+            <a href="#simulator" class="btn btn-lg btn-primary" id="hero-btn-primary">
+              <span>Launch Live Simulator</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+            <a href="#architecture" class="btn btn-lg btn-secondary" id="hero-btn-secondary">
+              <span>Read Specification</span>
+            </a>
+          </div>
+
+          <!-- Hero Telemetry Strip (Consistent, Clean Metrics) -->
+          <div class="telemetry-strip">
+            <div class="telemetry-item">
+              <span class="telemetry-figure" data-val="0">0</span>
+              <span class="telemetry-title">Starved Threads</span>
+              <span class="telemetry-caption">Under continuous high-priority workloads</span>
+            </div>
+            <div class="telemetry-divider"></div>
+            <div class="telemetry-item">
+              <span class="telemetry-figure" data-val="20">20</span>
+              <span class="telemetry-title">Threshold (θ)</span>
+              <span class="telemetry-caption">Calculated via waiting time & bypass count</span>
+            </div>
+            <div class="telemetry-divider"></div>
+            <div class="telemetry-item">
+              <span class="telemetry-figure" data-val="2">2×</span>
+              <span class="telemetry-title">Bypass Penalty (α)</span>
+              <span class="telemetry-caption">Weight multiplier per preemption bypass</span>
+            </div>
+            <div class="telemetry-divider"></div>
+            <div class="telemetry-item">
+              <span class="telemetry-figure" data-val="100">100%</span>
+              <span class="telemetry-title">Priority Rollback</span>
+              <span class="telemetry-caption">Zero permanent priority inversion</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Interactive Simulator Section -->
+      <section class="section section-simulator" id="simulator">
+        <div class="container">
+          <div class="section-heading text-center">
+            <span class="section-label">INTERACTIVE LAB</span>
+            <h2 class="section-title">Experience the scheduling difference.</h2>
+            <p class="section-subtext">
+              Run real CPU scheduling algorithms directly in your browser. Watch how standard preemptive priority starves low-priority thread P1, while StarveGuard intervenes at clock tick 10 to guarantee execution.
+            </p>
+          </div>
+
+          <div class="simulator-console">
+            <!-- Mode Switcher (Apple Segmented Control) -->
+            <div class="segmented-control-container">
+              <div class="segmented-control" id="sim-mode-segmented">
+                <button class="segment-btn active" data-mode="starveguard" id="mode-starveguard">
+                  StarveGuard Adaptive Aging
+                </button>
+                <button class="segment-btn" data-mode="normal" id="mode-normal">
+                  Standard Preemptive Priority
+                </button>
+              </div>
+            </div>
+
+            <!-- Simulator Control Deck -->
+            <div class="console-body">
+              <div class="console-toolbar">
+                <div class="workload-summary">
+                  <span class="workload-tag">Workload 01: Starvation Trap</span>
+                  <span class="workload-specs">P1 (Arr 0, Burst 15, Prio 6) • P2 (Arr 0, Burst 5, Prio 3) • P3 (Arr 5, Burst 5, Prio 3) • P4 (Arr 10, Burst 5, Prio 3)</span>
+                </div>
+                <div class="console-buttons">
+                  <button class="btn btn-md btn-primary" id="btn-run-sim">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="6 3 20 12 6 21 6 3"/>
+                    </svg>
+                    <span>Run Simulation</span>
+                  </button>
+                  <button class="btn btn-md btn-secondary" id="btn-reset-sim">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                      <path d="M3 3v5h5"/>
+                    </svg>
+                    <span>Reset</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Gantt Timeline Display -->
+              <div class="gantt-panel">
+                <div class="gantt-meta-row">
+                  <div class="gantt-title" id="gantt-mode-label">StarveGuard Adaptive Scheduling Timeline</div>
+                  <div class="gantt-status-pill" id="gantt-status-pill">Ready</div>
+                </div>
+
+                <div class="gantt-track-wrapper">
+                  <div class="gantt-track" id="gantt-track">
+                    <!-- Populated by JavaScript -->
+                  </div>
+                </div>
+
+                <div class="gantt-ruler">
+                  <span>T=0</span>
+                  <span>T=5</span>
+                  <span>T=10</span>
+                  <span>T=15</span>
+                  <span>T=20</span>
+                  <span>T=25</span>
+                  <span>T=30</span>
+                </div>
+
+                <!-- Process Chips Legend -->
+                <div class="process-legend">
+                  <div class="legend-chip"><span class="chip-color chip-p1"></span> P1 (Low Priority: 6)</div>
+                  <div class="legend-chip"><span class="chip-color chip-p2"></span> P2 (High Priority: 3)</div>
+                  <div class="legend-chip"><span class="chip-color chip-p3"></span> P3 (High Priority: 3)</div>
+                  <div class="legend-chip"><span class="chip-color chip-p4"></span> P4 (High Priority: 3)</div>
+                </div>
+              </div>
+
+              <!-- Live Process Metrics Table -->
+              <div class="sim-data-grid">
+                <div class="data-card">
+                  <span class="data-card-label">P1 Waiting Time</span>
+                  <span class="data-card-value" id="val-p1-waiting">-</span>
+                  <span class="data-card-note" id="note-p1-waiting">Lower is better</span>
+                </div>
+                <div class="data-card">
+                  <span class="data-card-label">Starvation Detected</span>
+                  <span class="data-card-value" id="val-starvation">-</span>
+                  <span class="data-card-note" id="note-starvation">Score ≥ θ (20)</span>
+                </div>
+                <div class="data-card">
+                  <span class="data-card-label">Aging Interventions</span>
+                  <span class="data-card-value" id="val-aging">-</span>
+                  <span class="data-card-note" id="note-aging">Dynamic priority promotions</span>
+                </div>
+                <div class="data-card">
+                  <span class="data-card-label">Jain's Fairness Index</span>
+                  <span class="data-card-value" id="val-fairness">-</span>
+                  <span class="data-card-note">Normalized (0.0 to 1.0)</span>
+                </div>
+              </div>
+
+              <!-- Real-time Explanation Banner -->
+              <div class="sim-verdict-box" id="sim-verdict">
+                <div class="verdict-indicator" id="verdict-dot"></div>
+                <div class="verdict-text" id="verdict-text">
+                  Select an algorithm and press <strong>Run Simulation</strong> to observe CPU time-slice distribution.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Core Engine: How It Works -->
+      <section class="section section-engine" id="architecture">
+        <div class="container">
+          <div class="section-heading text-center">
+            <span class="section-label">HOW IT WORKS</span>
+            <h2 class="section-title">Deterministic by design.</h2>
+            <p class="section-subtext">
+              Four cohesive stages ensure that thread starvation is diagnosed and resolved automatically, with zero manual priority tuning required.
+            </p>
+          </div>
+
+          <div class="pillars-grid">
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <span class="pillar-badge">01</span>
+                <span class="pillar-tag">Detection</span>
+              </div>
+              <h3 class="pillar-title">Bypass Tracking</h3>
+              <p class="pillar-desc">
+                When a newly arriving or active higher-priority process is dispatched, all eligible processes currently waiting in the ready queue have their individual bypass counter (B<sub>p</sub>) incremented.
+              </p>
+              <div class="pillar-meta">scheduler/preemptive.py</div>
+            </div>
+
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <span class="pillar-badge">02</span>
+                <span class="pillar-tag">Evaluation</span>
+              </div>
+              <h3 class="pillar-title">Starvation Scoring</h3>
+              <p class="pillar-desc">
+                At each scheduling quantum, waiting time and bypass counts are evaluated against the starvation formula. If S<sub>p</sub> reaches or exceeds θ = 20, the thread is formally flagged as starving.
+              </p>
+              <div class="pillar-meta">starvation/detector.py</div>
+            </div>
+
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <span class="pillar-badge">03</span>
+                <span class="pillar-tag">Prevention</span>
+              </div>
+              <h3 class="pillar-title">Adaptive Aging</h3>
+              <p class="pillar-desc">
+                The aging engine promotes the starving process by reducing its numerical priority value (e.g. from priority 6 down to priority 3), immediately qualifying it for CPU allocation under preemptive arbitration.
+              </p>
+              <div class="pillar-meta">aging/engine.py</div>
+            </div>
+
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <span class="pillar-badge">04</span>
+                <span class="pillar-tag">Equilibrium</span>
+              </div>
+              <h3 class="pillar-title">Guaranteed Rollback</h3>
+              <p class="pillar-desc">
+                Once an aged process finishes its execution slice or completes, its original base priority is seamlessly restored. High-priority threads never suffer from permanent priority inversion.
+              </p>
+              <div class="pillar-meta">aging/aging_manager.py</div>
+            </div>
+          </div>
+
+          <!-- Formula Showcase Box (Clean White Solid Panel) -->
+          <div class="formula-panel">
+            <div class="formula-header">
+              <span class="formula-tag">MATHEMATICAL SPECIFICATION</span>
+              <h3 class="formula-heading">The Starvation Metric Equation</h3>
+            </div>
+            <div class="formula-display">
+              <code>S<sub>p</sub> = W<sub>p</sub> + (B<sub>p</sub> × α)</code>
+            </div>
+            <div class="formula-breakdown">
+              <div class="breakdown-item">
+                <span class="breakdown-var">S<sub>p</sub></span>
+                <span class="breakdown-def">Composite Starvation Score for Process <em>p</em></span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-var">W<sub>p</sub></span>
+                <span class="breakdown-def">Accumulated ready-queue waiting duration (clock ticks)</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-var">B<sub>p</sub></span>
+                <span class="breakdown-def">Number of times a higher-priority process bypassed <em>p</em></span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-var">α</span>
+                <span class="breakdown-def">Bypass weight coefficient (configured = 2.0)</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-var">θ</span>
+                <span class="breakdown-def">Intervention threshold (configured = 20.0 score units)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Starvation Score Calculator -->
+      <section class="section section-calc" id="calculator">
+        <div class="container">
+          <div class="section-heading text-center">
+            <span class="section-label">INTERACTIVE FORMULA TOOL</span>
+            <h2 class="section-title">Test the starvation threshold.</h2>
+            <p class="section-subtext">
+              Adjust waiting time and bypass count to see exactly when StarveGuard triggers aging intervention.
+            </p>
+          </div>
+
+          <div class="calc-panel">
+            <div class="calc-inputs">
+              <div class="calc-slider-group">
+                <div class="slider-header">
+                  <label for="slider-waiting" class="slider-label">Waiting Time (W<sub>p</sub>):</label>
+                  <span class="slider-value" id="val-waiting-display">10 ticks</span>
+                </div>
+                <input type="range" id="slider-waiting" min="0" max="30" value="10" class="apple-slider" />
+              </div>
+
+              <div class="calc-slider-group">
+                <div class="slider-header">
+                  <label for="slider-bypass" class="slider-label">Bypass Count (B<sub>p</sub>):</label>
+                  <span class="slider-value" id="val-bypass-display">5 times</span>
+                </div>
+                <input type="range" id="slider-bypass" min="0" max="15" value="5" class="apple-slider" />
+              </div>
+
+              <div class="calc-slider-group">
+                <div class="slider-header">
+                  <label for="slider-alpha" class="slider-label">Bypass Weight (α):</label>
+                  <span class="slider-value" id="val-alpha-display">2.0×</span>
+                </div>
+                <input type="range" id="slider-alpha" min="1" max="4" step="0.5" value="2.0" class="apple-slider" />
+              </div>
+            </div>
+
+            <div class="calc-output-box" id="calc-output-box">
+              <span class="calc-output-label">Starvation Index (S<sub>p</sub>)</span>
+              <div class="calc-big-score" id="calc-score-display">20.0</div>
+              <div class="calc-progress-track">
+                <div class="calc-progress-fill status-danger" id="calc-progress-fill" style="width: 66.6%;"></div>
+                <div class="calc-threshold-marker active" id="calc-threshold-marker" style="left: 66.6%;">
+                  <span class="marker-label">θ = 20</span>
+                </div>
+              </div>
+              <div class="calc-status-badge status-danger" id="calc-status-badge">
+                AGING INTERVENTION TRIGGERED
+              </div>
+              <p class="calc-status-desc" id="calc-status-desc">
+                Score is ≥ 20. StarveGuard elevates process priority to grant immediate CPU scheduling.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empirical Benchmarks Section -->
+      <section class="section section-benchmarks" id="benchmarks">
+        <div class="container">
+          <div class="section-heading text-center">
+            <span class="section-label">EMPIRICAL BENCHMARKS</span>
+            <h2 class="section-title">Tested against real workload suites.</h2>
+            <p class="section-subtext">
+              Automated test suites comparing StarveGuard against standard priority across diverse thread distributions.
+            </p>
+          </div>
+
+          <div class="benchmarks-deck">
+            <!-- Benchmark Switcher Tabs -->
+            <div class="bench-tabs">
+              <button class="bench-tab active" data-chart="waiting" id="tab-waiting">
+                Waiting Time
+              </button>
+              <button class="bench-tab" data-chart="response" id="tab-response">
+                Response Latency
+              </button>
+              <button class="bench-tab" data-chart="fairness" id="tab-fairness">
+                Jain's Fairness Index
+              </button>
+            </div>
+
+            <div class="bench-card">
+              <div class="bench-visual">
+                <!-- Native Apple Interactive Animated Chart -->
+                <div class="interactive-chart" id="interactive-chart">
+                  <div class="chart-header">
+                    <div class="chart-title-box">
+                      <span class="chart-title" id="chart-dynamic-title">Average Waiting Time Comparison</span>
+                      <span class="chart-subtitle" id="chart-dynamic-sub">Lower waiting duration indicates faster queue throughput (ticks)</span>
+                    </div>
+                    <div class="chart-legend">
+                      <div class="legend-entry"><span class="legend-swatch swatch-normal"></span> Normal Priority</div>
+                      <div class="legend-entry"><span class="legend-swatch swatch-starveguard"></span> StarveGuard</div>
+                    </div>
+                  </div>
+
+                  <div class="chart-stage">
+                    <!-- Y-Axis Scale -->
+                    <div class="chart-y-axis" id="chart-y-axis">
+                      <span>25</span>
+                      <span>20</span>
+                      <span>15</span>
+                      <span>10</span>
+                      <span>5</span>
+                      <span>0</span>
+                    </div>
+
+                    <div class="chart-graph-frame">
+                      <!-- Bars Plotting Area (Pure Grid & Bars — Baseline at Bottom) -->
+                      <div class="chart-plot-area" id="chart-plot-area">
+                        <div class="chart-grid-lines">
+                          <div class="grid-line"></div>
+                          <div class="grid-line"></div>
+                          <div class="grid-line"></div>
+                          <div class="grid-line"></div>
+                          <div class="grid-line"></div>
+                          <div class="grid-line"></div>
+                        </div>
+
+                        <div class="chart-bars-container">
+                          <div class="chart-col" data-workload="0">
+                            <div class="bar-pair">
+                              <div class="chart-bar bar-normal" id="bar-normal-0" style="height: 60%;" title="Normal: 15.0 ticks">
+                                <span class="bar-val-label" id="val-normal-0">15.0</span>
+                              </div>
+                              <div class="chart-bar bar-starveguard" id="bar-sg-0" style="height: 65.3%;" title="StarveGuard: 16.3 ticks">
+                                <span class="bar-val-label" id="val-sg-0">16.3</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="chart-col" data-workload="1">
+                            <div class="bar-pair">
+                              <div class="chart-bar bar-normal" id="bar-normal-1" style="height: 25%;" title="Normal: 6.3 ticks">
+                                <span class="bar-val-label" id="val-normal-1">6.3</span>
+                              </div>
+                              <div class="chart-bar bar-starveguard" id="bar-sg-1" style="height: 25%;" title="StarveGuard: 6.3 ticks">
+                                <span class="bar-val-label" id="val-sg-1">6.3</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="chart-col" data-workload="2">
+                            <div class="bar-pair">
+                              <div class="chart-bar bar-normal" id="bar-normal-2" style="height: 93.3%;" title="Normal: 23.3 ticks">
+                                <span class="bar-val-label" id="val-normal-2">23.3</span>
+                              </div>
+                              <div class="chart-bar bar-starveguard" id="bar-sg-2" style="height: 98.7%;" title="StarveGuard: 24.7 ticks">
+                                <span class="bar-val-label" id="val-sg-2">24.7</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="chart-col" data-workload="3">
+                            <div class="bar-pair">
+                              <div class="chart-bar bar-normal" id="bar-normal-3" style="height: 4%;" title="Normal: 0.0 ticks">
+                                <span class="bar-val-label" id="val-normal-3">0.0</span>
+                              </div>
+                              <div class="chart-bar bar-starveguard" id="bar-sg-3" style="height: 4%;" title="StarveGuard: 0.0 ticks">
+                                <span class="bar-val-label" id="val-sg-3">0.0</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Clean X-Axis Labels Row (Strictly Below Baseline — Zero Overlap) -->
+                      <div class="chart-x-axis-row">
+                        <span class="x-axis-col-label">Workload 1</span>
+                        <span class="x-axis-col-label">Workload 2</span>
+                        <span class="x-axis-col-label">Workload 3</span>
+                        <span class="x-axis-col-label">Workload 4</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Chart Footer Row -->
+                  <div class="chart-footer-row">
+                    <span class="chart-note">Source: <code>results/workload_results.csv</code></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Executive Narrative & Performance Matrix (Clean Inter Typography, Zero Clutter) -->
+              <div class="bench-narrative">
+                <span id="bench-category" style="display: none;"></span>
+                <h3 class="bench-heading" id="bench-headline">Comparative Performance Summary</h3>
+                <p class="bench-summary" id="bench-body">
+                  In Workload 1, low-priority tasks receive early execution slices under StarveGuard. While average waiting time increases modestly by +1.33 ticks, maximum waiting drops dramatically, completely preventing thread starvation.
+                </p>
+
+                <!-- Modern Clean Comparison Table -->
+                <div class="bench-matrix-card">
+                  <div class="matrix-header">
+                    <span class="m-cell scenario">Scenario</span>
+                    <span class="m-cell val normal-col">Standard</span>
+                    <span class="m-cell val sg-col">StarveGuard</span>
+                    <span class="m-cell delta">Impact</span>
+                  </div>
+                  <div class="matrix-row">
+                    <span class="m-cell scenario">01 • Starvation Trap</span>
+                    <span class="m-cell val normal" id="row-val-normal-0">15.00</span>
+                    <span class="m-cell val sg" id="row-val-sg-0">16.33</span>
+                    <span class="m-cell delta" id="row-delta-0">
+                      <span class="delta-tag neutral">+1.33 · Immune</span>
+                    </span>
+                  </div>
+                  <div class="matrix-row">
+                    <span class="m-cell scenario">02 • Uniform Arrivals</span>
+                    <span class="m-cell val normal" id="row-val-normal-1">6.25</span>
+                    <span class="m-cell val sg" id="row-val-sg-1">6.25</span>
+                    <span class="m-cell delta" id="row-delta-1">
+                      <span class="delta-tag neutral">0.00 · Par</span>
+                    </span>
+                  </div>
+                  <div class="matrix-row">
+                    <span class="m-cell scenario">03 • Long Burst Chain</span>
+                    <span class="m-cell val normal" id="row-val-normal-2">23.33</span>
+                    <span class="m-cell val sg" id="row-val-sg-2">24.67</span>
+                    <span class="m-cell delta" id="row-delta-2">
+                      <span class="delta-tag neutral">+1.34 · Immune</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="bench-source-note">
+                  Benchmark test suite verified in <code>tests/test_scheduler.py</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Real Application Showcase (Segmented Screenshot Viewer) -->
+      <section class="section section-showcase" id="showcase">
+        <div class="container">
+          <div class="section-heading text-center">
+            <span class="section-label">APPLICATION SUITE</span>
+            <h2 class="section-title">Built for desktop & CLI workflows.</h2>
+            <p class="section-subtext">
+              StarveGuard includes a visual desktop dashboard engineered with zero heavy GUI dependencies, alongside comprehensive terminal benchmarking tools.
+            </p>
+          </div>
+
+          <div class="showcase-segmented-control">
+            <button class="showcase-tab active" data-img="/images/dashboard_overview.png" data-desc="Complete desktop dashboard displaying simulation inputs, side-by-side metric tables, and live Gantt chart.">
+              Dashboard Overview
+            </button>
+            <button class="showcase-tab" data-img="/images/gantt_timelines.png" data-desc="Comparative Gantt timelines with process-level metrics and aging intervention events.">
+              Comparative Gantt Timelines
+            </button>
+            <button class="showcase-tab" data-img="/images/vintage_ui_preview.png" data-desc="Vintage desktop style UI featuring metric definitions and execution controls.">
+              Vintage UI Layout
+            </button>
+          </div>
+
+          <div class="showcase-window-frame">
+            <div class="window-bar">
+              <div class="window-lights">
+                <span class="w-dot"></span>
+                <span class="w-dot"></span>
+                <span class="w-dot"></span>
+              </div>
+              <span class="window-title-text" id="showcase-window-title">StarveGuard Desktop Interface — Production Run</span>
+            </div>
+            <div class="window-canvas">
+              <img src="/images/dashboard_overview.png" alt="StarveGuard Application Showcase" id="showcase-active-img" class="showcase-img" />
+            </div>
+            <div class="window-caption" id="showcase-caption">
+              Complete desktop dashboard displaying simulation inputs, side-by-side metric tables, and live Gantt chart.
+            </div>
+          </div>
+
+          <!-- Quickstart Terminal -->
+          <div class="terminal-card">
+            <div class="terminal-top">
+              <div class="terminal-dots">
+                <span class="t-dot"></span>
+                <span class="t-dot"></span>
+                <span class="t-dot"></span>
+              </div>
+              <span class="terminal-label">Quickstart Execution</span>
+              <button class="btn btn-sm btn-terminal-copy" id="btn-copy">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span id="copy-label">Copy Commands</span>
+              </button>
+            </div>
+            <pre class="terminal-code-body"><code id="quickstart-code"># Clone and inspect repository
+git clone https://github.com/ujvall/StarveGuard.git
+cd StarveGuard
+
+# Execute comparative simulation CLI
+python main.py
+
+# Launch visual Tkinter desktop application
+python -m ui.app</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Clean Apple-Grade Minimal Footer -->
+    <footer class="footer">
+      <div class="container footer-content">
+        <div class="footer-primary">
+          <div class="footer-brand-title">StarveGuard</div>
+          <p class="footer-desc">
+            An adaptive process starvation detection and aging-based prevention system for modern preemptive operating systems.
+          </p>
+        </div>
+        <div class="footer-nav-col">
+          <span class="footer-col-header">Architecture</span>
+          <a href="#simulator">Simulator</a>
+          <a href="#architecture">Starvation Formula</a>
+          <a href="#calculator">Score Calculator</a>
+        </div>
+        <div class="footer-nav-col">
+          <span class="footer-col-header">Verification</span>
+          <a href="#benchmarks">Benchmark Graphs</a>
+          <a href="#showcase">Desktop UI</a>
+          <a href="https://github.com/ujvall/StarveGuard" target="_blank" rel="noopener noreferrer">Source Code</a>
+        </div>
+        <div class="footer-nav-col">
+          <span class="footer-col-header">Repository</span>
+          <a href="https://github.com/ujvall/StarveGuard#readme" target="_blank" rel="noopener noreferrer">README</a>
+          <a href="https://github.com/ujvall/StarveGuard/blob/main/results/experiment_results.txt" target="_blank" rel="noopener noreferrer">Results Log</a>
+          <a href="https://github.com/ujvall/StarveGuard/tree/main/tests" target="_blank" rel="noopener noreferrer">Test Suites</a>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <span>© 2026 StarveGuard Project</span>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
