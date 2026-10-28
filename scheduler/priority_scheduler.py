@@ -6,28 +6,48 @@ from aging.aging_manager import AgingManager
 
 class PriorityScheduler:
     """
-    StarveGuard Preemptive Priority Scheduler with Starvation Detection and Multi-Tier Aging.
+    StarveGuard Preemptive Priority Scheduler with Starvation Detection and Aging.
 
     Scheduling Policy:
         - Evaluated per discrete time unit (quantum = 1).
-        - Dynamic aging evaluates ready processes at each scheduling boundary.
+        - Dynamic aging evaluates ready processes at each scheduling decision.
         - Process with lowest numerical effective priority is dispatched.
         - Tie-breaking: earliest arrival time (FCFS), then lexicographical PID.
         - Idle CPU periods are explicitly tracked.
+        - Supports:
+            * 'capped': Historical 3-tier capped aging (max boost +3)
+            * 'continuous': Continuous waiting-time aging (floor 1, parameter K)
+            * 'conservative': Threshold-Triggered Conservative Aging (TTCA, floor 2 apex isolation)
     """
 
     def __init__(
         self,
         processes: List[Process],
         detector: Optional[StarvationDetector] = None,
-        aging_manager: Optional[AgingManager] = None
+        aging_manager: Optional[AgingManager] = None,
+        aging_policy: str = "capped",
+        k: int = 5,
+        threshold: int = 20,
+        k_starve: int = 10,
+        max_boost: int = 3,
+        floor: Optional[int] = None
     ):
         self.processes = processes
         self.time = 0
         self.gantt_chart: List[Tuple[str, int]] = []
         self.aging_events: List[Tuple[int, str, int, int, int]] = []
-        self.detector = detector if detector is not None else StarvationDetector()
-        self.aging_manager = aging_manager if aging_manager is not None else AgingManager()
+        self.detector = detector if detector is not None else StarvationDetector(threshold=threshold)
+        if aging_manager is not None:
+            self.aging_manager = aging_manager
+        else:
+            self.aging_manager = AgingManager(
+                policy=aging_policy,
+                k=k,
+                threshold=threshold,
+                k_starve=k_starve,
+                max_boost=max_boost,
+                floor=floor
+            )
         self._last_running_pid: Optional[str] = None
 
     def get_ready_processes(self) -> List[Process]:
@@ -39,28 +59,26 @@ class PriorityScheduler:
     def apply_starvation_prevention(self) -> None:
         """
         Evaluates waiting processes in the ready queue, detects starvation,
-        and applies multi-tier priority boosts.
+        and applies priority aging.
         """
         for p in self.get_ready_processes():
             score = self.detector.calculate_score(p)
+            if self.detector.is_starving(p):
+                p.starvation_detected = True
+
             old_priority = p.current_priority
+            adjusted = self.aging_manager.apply_aging(p, score)
 
-            if score >= 10:
-                if score >= self.detector.threshold:
-                    p.starvation_detected = True
-
-                adjusted = self.aging_manager.apply_aging(p, score)
-
-                if adjusted:
-                    self.aging_events.append(
-                        (
-                            self.time,
-                            p.pid,
-                            old_priority,
-                            p.current_priority,
-                            score
-                        )
+            if adjusted:
+                self.aging_events.append(
+                    (
+                        self.time,
+                        p.pid,
+                        old_priority,
+                        p.current_priority,
+                        score
                     )
+                )
 
     def select_process(self) -> Optional[Process]:
         ready = self.get_ready_processes()

@@ -217,6 +217,31 @@ reset_button = tk.Button(
 )
 reset_button.pack(side="left", padx=8)
 
+policy_lbl = tk.Label(
+    btn_container,
+    text="Aging Policy:",
+    font=("Tahoma", 9, "bold"),
+    bg="#F0F0F0",
+    fg="#000000"
+)
+policy_lbl.pack(side="left", padx=(14, 4))
+
+policy_combo = ttk.Combobox(
+    btn_container,
+    values=[
+        "Capped Aging (+3)",
+        "Conservative Aging (TTCA)",
+        "Continuous Aging (K=5)",
+        "Continuous Aging (K=3)",
+        "Continuous Aging (K=10)"
+    ],
+    state="readonly",
+    width=22,
+    font=("Tahoma", 9)
+)
+policy_combo.set("Capped Aging (+3)")
+policy_combo.pack(side="left", padx=4)
+
 dashboard_frame = tk.Frame(scrollable_frame, bg="#F0F0F0")
 dashboard_frame.pack(fill="x", padx=20, pady=6)
 
@@ -1023,9 +1048,25 @@ def run_simulation():
         process_data.append((f"P{i + 1}", arrival, burst, priority))
 
     try:
+        selected_policy = policy_combo.get()
+        if "Conservative" in selected_policy or "TTCA" in selected_policy:
+            aging_pol = "conservative"
+            k_val = 10
+        elif "Continuous" in selected_policy:
+            aging_pol = "continuous"
+            if "K=3" in selected_policy:
+                k_val = 3
+            elif "K=10" in selected_policy:
+                k_val = 10
+            else:
+                k_val = 5
+        else:
+            aging_pol = "capped"
+            k_val = 5
+
         comparator = SchedulerComparator(process_data)
         normal = comparator.run_normal()
-        starveguard = comparator.run_starveguard()
+        starveguard = comparator.run_starveguard(aging_policy=aging_pol, k=k_val)
     except Exception as exc:
         set_status(f"Simulation error: {exc}", "#DC2626")
         messagebox.showerror(
@@ -1036,11 +1077,11 @@ def run_simulation():
 
     display_results(normal, starveguard)
     draw_gantt_chart(normal_canvas, normal["scheduler"].gantt_chart, "Normal Priority")
-    draw_gantt_chart(starveguard_canvas, starveguard["scheduler"].gantt_chart, "StarveGuard")
+    draw_gantt_chart(starveguard_canvas, starveguard["scheduler"].gantt_chart, f"StarveGuard ({selected_policy})")
     display_process_details(starveguard["processes"])
     display_aging_events(starveguard["scheduler"].aging_events)
 
-    set_status("Simulation completed successfully. Visual dashboard updated.", "#059669")
+    set_status(f"Simulation completed successfully ({selected_policy}). Visual dashboard updated.", "#059669")
 
 
 run_button.config(command=run_simulation)

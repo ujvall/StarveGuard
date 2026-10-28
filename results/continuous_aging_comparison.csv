@@ -1,0 +1,8 @@
+Workload,Processes,Normal Avg Waiting,Capped Avg Waiting,Cont_K5 Avg Waiting,TTCA Avg Waiting,Normal Max Waiting,Capped Max Waiting,Cont_K5 Max Waiting,TTCA Max Waiting,Normal Starved,Capped Starved,Cont_K5 Starved,TTCA Starved,Capped Interventions,Cont_K5 Interventions,TTCA Interventions,Normal Fairness,Capped Fairness,Cont_K5 Fairness,TTCA Fairness
+Workload 1 (Classic Starvation),3,15.00,15.00,15.00,15.00,25,25,25,25,2,2,1,2,4,9,2,0.5831,0.5831,0.6757,0.5831
+Workload 2 (Staggered Arrivals),4,6.25,6.25,6.25,6.25,11,11,11,11,0,0,0,0,2,4,0,0.7653,0.7653,0.7653,0.7653
+Workload 3 (Long-Burst Starvation),3,23.33,23.33,25.00,23.33,40,40,35,40,2,2,3,2,6,15,5,0.6357,0.6357,0.8552,0.6357
+Workload 4 (Sequential Non-Contested),3,0.00,0.00,0.00,0.00,0,0,0,0,0,0,0,0,0,0,0,1.0000,1.0000,1.0000,1.0000
+Small Scale (10 procs - Contention),10,7.60,8.40,9.70,9.40,44,44,47,44,2,2,2,2,6,16,6,0.8920,0.8833,0.8722,0.8744
+Medium Scale (50 procs - Skewed),50,104.90,104.20,188.76,102.74,393,393,405,393,34,39,42,37,97,165,82,0.3994,0.4184,0.3174,0.3754
+Large Scale (100 procs - Multi-tier),100,278.81,294.23,503.38,297.19,1011,1011,975,1011,73,95,96,85,218,372,181,0.3148,0.2242,0.1446,0.2331
