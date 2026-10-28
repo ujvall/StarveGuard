@@ -1,221 +1,222 @@
-# StarveGuard
+# StarveGuard: Adaptive Process Starvation Detection and Aging-Based Prevention System
 
-### Adaptive Process Starvation Detection and Aging-Based Prevention System
-
-**StarveGuard** is an Operating Systems CPU scheduling research prototype that detects and prevents process starvation in preemptive priority scheduling. By tracking queue waiting times and scheduling bypass frequencies, StarveGuard computes a dynamic starvation score and applies multi-tier aging to guarantee forward progress for lower-priority jobs without sacrificing priority hierarchy.
+An Operating Systems CPU scheduling simulation and research framework that implements preemptive priority scheduling, detects thread starvation in the ready queue, and applies multi-tier adaptive aging to guarantee forward progress for lower-priority jobs.
 
 ---
 
-## The Problem & The Solution
+## 1. Operating System Concepts & Scheduling Model
 
-| Challenge in Standard Priority Scheduling | StarveGuard's Adaptive Solution |
-| :--- | :--- |
-| **Indefinite Starvation:** High-priority arrivals continually monopolize the CPU. | **Dual-Factor Tracking:** Continuously monitors both cumulative waiting time and scheduling bypass count. |
-| **Static Priorities:** Low-priority tasks remain locked at their initial rank. | **Graduated Aging:** Dynamically escalates effective priority based on starvation severity. |
-| **No Starvation Visibility:** Schedulers do not identify struggling processes. | **Explicit Detection:** Flags starvation when a process score reaches or exceeds threshold 20. |
-| **Degraded Fairness:** System throughput becomes biased against longer/lower-priority tasks. | **Balanced Throughput:** Improves Jain's Fairness Index and cuts response times by up to 28%. |
+### Preemptive Priority Scheduling
+In priority scheduling, each process is assigned an integer priority rank upon arrival. Under the convention implemented in this project:
+- **Lower numerical value represents higher scheduling priority** (e.g., Priority 1 is the highest priority; Priority 10 is low priority).
+- **Preemption:** At every discrete scheduling boundary (time quantum = 1), the scheduler evaluates all ready processes. If a process with a strictly higher priority (lower numerical value) is ready, the currently running process is preempted and returned to the ready queue.
+- **Deterministic Tie-Breaking:** When two ready processes possess identical priority ranks:
+  1. **Primary criterion:** Earliest arrival time (First-Come, First-Served / FCFS).
+  2. **Secondary criterion:** Lexicographical process ID (`PID`, e.g., `"P1" < "P2"`).
 
----
-
-## How It Works
-
-```mermaid
-flowchart TD
-    A[Ready Queue] --> B[Calculate Starvation Score]
-    B --> C{Score >= 10?}
-    C -->|Yes| D[Apply Priority Boost max 1, orig - boost]
-    D --> E{Score >= 20?}
-    E -->|Yes| F[Flag Starvation Detected]
-    E -->|No| G[Log Aging Event]
-    F --> G
-    G --> H[Preemptively Select Highest Priority Job]
-    C -->|No| H
-    H --> I[Execute for 1 Time Unit]
-    I --> J[Increment Waiting Time & Bypass Count for Waiting Jobs]
-    J --> K{Workload Complete?}
-    K -->|No| A
-    K -->|Yes| L[Compute Benchmark Metrics & Jain's Fairness]
+### Process Execution Lifecycle
 ```
-
-### 1. Starvation Detection Formula
-$$\text{Starvation Score} = \text{Waiting Time} + (\text{Bypass Count} \times 2)$$
-
-- **Waiting Time:** Discrete time units spent in the ready queue.
-- **Bypass Count:** Number of scheduling cycles where a process was ready but another process took the CPU.
-- **Starvation Threshold:** When $\text{Score} \ge 20$, the process is marked as **Starved**.
-
-### 2. Multi-Tier Aging Policy
-Aging reduces the process's numerical priority value (**lower number = higher priority**), anchored to `original_priority` with a floor of `1`:
-
-| Starvation Score | Priority Boost | Effective Priority Formula | Status |
-| :---: | :---: | :--- | :--- |
-| **0 – 9** | `0` | `current = original_priority` | Normal execution |
-| **10 – 19** | `+1` | `current = max(1, original_priority - 1)` | Priority Escalation |
-| **20 – 29** | `+2` | `current = max(1, original_priority - 2)` | **Starvation Flagged** |
-| **30+** | `+3` | `current = max(1, original_priority - 3)` | Maximum Aging Tier |
+[Unarrived] ──(arrival_time <= t)──> [Ready Queue] ──(highest priority)──> [Running on CPU]
+                                            ▲                                      │
+                                            │──────(preempted or time slice)───────│
+                                            │                                      ▼
+                                     [Dynamic Aging]                 (remaining_time == 0)
+                                    (evaluates score)                              │
+                                                                                   ▼
+                                                                              [Completed]
+```
+1. **Arrival & Readiness:** A process enters the ready queue when simulation time $t \ge \text{arrival\_time}$.
+2. **Dispatch & Response:** The process's first execution time is recorded as `first_run_time`. Its **Response Time** is calculated exactly once:
+   $$\text{Response Time} = \text{first\_run\_time} - \text{arrival\_time}$$
+3. **Execution & Preemption:** Remaining burst time is decremented per unit. If preempted by a higher-priority arrival or an aged process, the process returns to the ready queue.
+4. **Completion & Consistency:** When `remaining_time == 0`, completion time ($CT$) is recorded:
+   $$\text{Turnaround Time} = CT - \text{arrival\_time}$$
+   $$\text{Waiting Time} = \text{Turnaround Time} - \text{burst\_time}$$
+   The implementation strictly verifies the invariant $\text{Waiting Time} = \text{Turnaround Time} - \text{burst\_time}$ across all lifecycles.
+5. **Idle Time Tracking:** When the ready queue is empty, the scheduler explicitly advances the clock and logs an `"IDLE"` timeline slice, preserving timeline continuity in Gantt visualizers.
 
 ---
 
-## Architectural Comparison
+## 2. Starvation Detection & Scoring Formula
+
+### Academic Audit & Formulation
+In standard priority scheduling, lower-priority threads can be indefinitely starved if higher-priority jobs continually arrive. Schedulers mitigate this via starvation tracking.
+
+The starvation score formula is:
+$$\text{Starvation Score} = \text{Waiting Time} + (\text{Bypass Count} \times \text{bypass\_weight})$$
+
+- **Waiting Time ($W_p$):** Cumulative discrete clock cycles spent by process $p$ in the ready queue without CPU allocation.
+- **Bypass Count ($B_p$):** The number of scheduling dispatch decisions that selected another process while process $p$ was waiting in the ready queue.
+- **Score Simplification:** In a single-core discrete simulation, incrementing both waiting time and bypass count every clock tick leads to double-counting the same event. In StarveGuard, `bypass_weight` defaults to `0`, directly equating the starvation score to queue waiting time ($W_p$), which provides the standard, uninflated Operating Systems metric for starvation. If `bypass_weight > 0` is explicitly configured, dispatch bypasses add weighted penalty.
+- **Starvation Threshold ($\theta = 20$):** When $\text{Score} \ge 20$, the process is formally flagged as having crossed the starvation threshold. This status records an internal starvation alert; it does not indicate permanent deadlock, because StarveGuard's aging engine intervenes to restore CPU allocation.
+
+---
+
+## 3. Multi-Tier Adaptive Aging Policy
+
+To prevent indefinite starvation without destroying priority hierarchies, StarveGuard applies a tiered priority boost:
+
+| Starvation Score (Waiting Duration) | Aging Tier | Priority Boost ($\Delta$) | Effective Priority Formula | Scheduling Status |
+| :---: | :---: | :---: | :--- | :--- |
+| **0 – 9** | Tier 0 | `0` | $\text{priority} = \text{original\_priority}$ | Normal execution |
+| **10 – 19** | Tier 1 | `+1` | $\text{priority} = \max(1, \text{original\_priority} - 1)$ | Moderate wait; minor boost |
+| **20 – 29** | Tier 2 | `+2` | $\text{priority} = \max(1, \text{original\_priority} - 2)$ | **Starvation flagged ($\theta \ge 20$)** |
+| **30+** | Tier 3 | `+3` | $\text{priority} = \max(1, \text{original\_priority} - 3)$ | Severe wait; maximum boost |
+
+### Theoretical Properties & Boundaries
+1. **Anchored to Original Priority:** The boost is subtracted from `original_priority`, not compounding from `current_priority`. This prevents runaway escalation where a process collapses permanently to priority 1.
+2. **Floor of 1:** The effective priority cannot drop below numerical value 1 (the highest possible priority). A process with initial priority 1 remains at priority 1.
+3. **Reachability and Bounded-Waiting Limits:**
+   Because the maximum boost is $+3$, a process with initial priority 8 can reach at most priority 5. If processes with priorities 1 through 4 continually arrive, a priority-8 process can still experience starvation. Thus, strict bounded waiting is guaranteed under the condition that arriving processes have priorities within the reach of the boosted tier ($\text{arrival priority} \ge \text{original\_priority} - 3$).
+
+---
+
+## 4. Architectural Comparison
 
 | Dimension | Normal Priority Scheduler | StarveGuard Priority Scheduler |
 | :--- | :---: | :---: |
-| **Source Module** | `scheduler.normal_priority_scheduler` | `scheduler.priority_scheduler` |
-| **Preemption** | Yes (per discrete time unit) | Yes (per discrete time unit) |
-| **Priority State** | Static (Fixed throughout) | Dynamic (Adaptive aging applied per cycle) |
-| **Bypass Tracking** | No | Yes (`bypass_count`) |
-| **Starvation Detection** | No | Yes ($\text{Score} \ge 20$) |
-| **Aging Interventions** | None | Multi-tier boost based on score tiers |
-| **Event Auditing** | None | Timestamped log of old $\to$ new priorities & scores |
-| **Fairness Evaluation** | Post-simulation | Post-simulation (Jain's Fairness Index) |
+| **Implementation** | `scheduler.normal_priority_scheduler` | `scheduler.priority_scheduler` |
+| **Preemption Model** | Preemptive per discrete time unit | Preemptive per discrete time unit |
+| **Priority Handling** | Static (Fixed rank throughout life) | Dynamic (Multi-tier aging evaluated at each tick) |
+| **Dispatch Bypass Tracking** | Yes (`bypass_count` on dispatch switch) | Yes (`bypass_count` on dispatch switch) |
+| **Starvation Alerting** | None (Processes starve silently) | Explicit ($\text{Score} \ge 20$, threshold crossing log) |
+| **Idle Period Logging** | Yes (`"IDLE"` time slices recorded) | Yes (`"IDLE"` time slices recorded) |
+| **Audit Log** | None | Timestamped transition log `(t, pid, old, new, score)` |
+| **Fairness Evaluation** | Post-simulation (Jain's index & WT spread) | Post-simulation (Jain's index & WT spread) |
 
 ---
 
-## Aging in Action: Demonstration Walkthrough
+## 5. Experimental Benchmark Results
 
-Consider a high-contention arrival pattern where three priority-3 jobs arrive while low-priority process P1 (priority 6) is waiting:
+Experiments were conducted across controlled, reproducible workloads using deterministic seeds (`seed=42`).
 
-| Process | Arrival Time | Burst Time | Initial Priority |
-| :---: | :---: | :---: | :---: |
-| **P1** | 0 | 15 | 6 (Low) |
-| **P2** | 0 | 5 | 3 (High) |
-| **P3** | 5 | 5 | 3 (High) |
-| **P4** | 10 | 5 | 3 (High) |
+### Summary of Benchmark Runs (`results/workload_results.csv`)
 
-### Timeline Comparison
+| Workload Scenario | $N$ | Normal Wait | SG Wait | Normal Resp | SG Resp | Normal Fairness | SG Fairness | Starved | Protected | Aging Interventions |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Workload 1 (Classic Starvation)** | 3 | 15.00 | 15.00 | 15.00 | 15.00 | 0.583 | 0.583 | 2 | 2 | 4 |
+| **Workload 2 (Staggered Arrivals)** | 4 | 6.25 | 6.25 | 5.25 | 5.25 | 0.765 | 0.765 | 0 | 2 | 2 |
+| **Workload 3 (Long-Burst Starvation)** | 3 | 23.33 | 23.33 | 23.33 | 23.33 | 0.636 | 0.636 | 2 | 2 | 6 |
+| **Workload 4 (Sequential Non-Contested)** | 3 | 0.00 | 0.00 | 0.00 | 0.00 | 1.000 | 1.000 | 0 | 0 | 0 |
+| **Small Scale (High Contention)** | 10 | 7.60 | 8.40 | 4.50 | **3.10 (-31%)** | 0.892 | 0.883 | 2 | 2 | 6 |
+| **Medium Scale (Skewed Arrivals)** | 50 | 104.90 | **104.20 (-0.7%)** | 98.36 | 100.36 | 0.399 | **0.418 (+4.8%)** | 39 | 39 | 97 |
+| **Large Scale (Multi-tier 100 Jobs)** | 100 | 278.81 | 294.23 | 274.85 | 290.40 | 0.315 | 0.224 | 95 | 86 | 218 |
 
-- **Normal Priority:**
-  `[ P2 (0-5) ][ P3 (5-10) ][ P4 (10-15) ][ P1 (15-30) ]`
-  *P1 is starved in the queue for 15 units until all higher-priority jobs complete.*
-
-- **StarveGuard Adaptive Timeline:**
-  `[ P2 (0-5) ][ P3 (5-10) ][ P1 (10-14) ][ P4 (14-19) ][ P1 (19-30) ]`
-  *At $t=4$, P1 is boosted to priority 5. At $t=7$, starvation is detected and P1 is boosted to priority 4. At $t=10$, P1 reaches score 30 and is boosted to **priority 3**. Having arrived earlier ($t=0$ vs $t=10$), **P1 preempts P4**!*
-
-### Measured Outcome
-
-| Metric | Normal Priority | StarveGuard | Impact |
-| :--- | :---: | :---: | :--- |
-| **Average Response Time** | 3.75 | **3.50** | **-6.7% (Faster first CPU allocation)** |
-| **Average Waiting Time** | 3.75 | 4.75 | Minimal trade-off (+1.00) to break starvation |
-| **Maximum Waiting Time** | 15 | 15 | Maintained |
-| **Starved / Protected** | 0 / 0 | **1 / 2** | Successfully prevented prolonged lockout |
-| **Aging Interventions** | 0 | **4** | Dynamic priority adjustments executed |
+### Academic Analysis of Trade-offs
+1. **Response Time Improvement in Contended Systems:** In the 10-process contention workload, StarveGuard cut average response time from **4.50 to 3.10 (-31.1%)** by elevating starving processes before they suffered prolonged initial dispatch delay.
+2. **Fairness Improvement in Skewed Systems:** In the 50-process medium workload, Jain's Fairness Index improved from **0.399 to 0.418 (+4.8%)**, and 39 starving jobs were protected through 97 aging interventions.
+3. **System-Level Trade-offs:** In saturated, heavy-tail workloads (Large Scale 100 jobs), elevating long-burst lower-priority jobs preempts newly arrived higher-priority jobs. This increases the average waiting time across all 100 jobs (278.81 vs. 294.23 ticks) while successfully preventing any single low-priority job from experiencing unbounded starvation.
 
 ---
 
-## Experimental Benchmark Results
+## 6. Performance & Fairness Metrics
 
-From the automated test suite (`results/workload_results.csv`):
+Calculated via `metrics/calculator.py`:
 
-| Workload | Scenario Description | Normal Resp | StarveGuard Resp | Normal Fairness | StarveGuard Fairness | Aging Events |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Workload 1** | Classic Starvation (P1:20 vs P2,P3) | 15.00 | **11.67 (-22.2%)** | 0.583 | **0.630 (+8.1%)** | 7 |
-| **Workload 2** | Staggered Mixed Arrivals | 5.25 | 5.25 | 0.765 | 0.765 | 7 |
-| **Workload 3** | Long-Burst Starvation (P1:30 vs P2,P3) | 23.33 | **16.67 (-28.5%)** | 0.636 | **0.672 (+5.7%)** | 7 |
-| **Workload 4** | Sequential Arrivals (No Contention) | 0.00 | 0.00 | 1.000 | 1.000 | 0 |
-
-> **Key Finding:** In contested environments, StarveGuard dramatically reduces response times (by up to **28.5%**) and improves Jain's Fairness Index while matching baseline behavior identically when contention is absent.
-
----
-
-## Metrics & Mathematical Foundations
-
-StarveGuard calculates performance and equity through `metrics/calculator.py`:
-
-- **Jain's Fairness Index:** Evaluates system service efficiency across processes:
-  $$J(x_1, \dots, x_n) = \frac{\left(\sum_{i=1}^n x_i\right)^2}{n \cdot \sum_{i=1}^n x_i^2}, \quad x_i = \frac{\text{Burst}_i}{\text{Turnaround}_i}$$
-  *(1.0 denotes perfect fairness; lower values reflect starvation imbalance).*
-- **Average Waiting Time:** Mean duration processes spent in the ready queue: $\frac{1}{n} \sum WT_i$.
-- **Average Turnaround Time:** Mean elapsed time from arrival to completion: $\frac{1}{n} \sum TAT_i$.
-- **Average Response Time:** Mean time from arrival to initial CPU dispatch: $\frac{1}{n} \sum RT_i$.
-- **Process Lifecycle Relations:**
-  - $\text{Turnaround Time} = \text{Completion Time} - \text{Arrival Time}$
-  - $\text{Waiting Time} = \text{Turnaround Time} - \text{Burst Time}$
-  - $\text{Response Time} = \text{First Run Time} - \text{Arrival Time}$
+- **Jain's Fairness Index:** Evaluates equity of normalized service efficiency across all jobs:
+  $$J(x_1, \dots, x_n) = \frac{\left(\sum_{i=1}^n x_i\right)^2}{n \cdot \sum_{i=1}^n x_i^2}, \quad x_i = \frac{\text{burst\_time}_i}{\text{turnaround\_time}_i}$$
+  *(1.0 denotes equal execution efficiency; lower values reflect starvation imbalance).*
+- **Waiting Time Disparity:** Measures spread between longest and shortest waiting times:
+  $$\text{Disparity} = \max(WT) - \min(WT)$$
+- **Average Waiting Time ($AWT$):** $\frac{1}{n} \sum WT_i$.
+- **Average Turnaround Time ($ATAT$):** $\frac{1}{n} \sum TAT_i$.
+- **Average Response Time ($ART$):** $\frac{1}{n} \sum RT_i$.
 
 ---
 
-## Desktop Dashboard & CLI
-
-### Graphical Interface (`ui/app.py`)
-Built with Tkinter and ttk, the dashboard includes:
-- **Interactive Process Table:** Configure arrivals, bursts, and priorities for P1–P4 with Enter-key navigation.
-- **Side-by-Side Metrics Panels:** Live numerical comparison across Normal, StarveGuard, and signed delta changes.
-- **Dual Visual Gantt Charts:** Proportional Tkinter Canvas timelines showing exact execution intervals and idle periods.
-- **Process & Event Treeviews:** 12-column process-level detail table alongside a chronological aging event log.
-- **Benchmark Graph Viewer:** Launch comparative Matplotlib visualizations (`waiting`, `response`, and `fairness`).
-
-### Command-Line Interface (`main.py`)
-An interactive terminal runner that executes both schedulers, prints ASCII Gantt charts, displays comparative metric tables, and outputs the aging audit log.
-
----
-
-## Project Structure
+## 7. Project Structure
 
 ```
 StarveGuard/
-├── aging/          # Multi-tier priority boost and aging manager
-├── comparison/     # SchedulerComparator running dual simulations
-├── metrics/        # MetricsCalculator and Jain's Fairness Index
-├── results/        # Pre-generated benchmark CSV logs and Matplotlib charts
-├── scheduler/      # Process dataclass, priority scheduler, and normal scheduler
-├── starvation/     # StarvationDetector scoring and threshold checks
-├── tests/          # 11 unit and integration test suites
-├── ui/             # Tkinter desktop application (app.py)
-├── main.py         # Terminal CLI runner
-└── README.md       # Project documentation
+├── aging/                      # Multi-tier priority boost and aging manager
+│   └── aging_manager.py
+├── comparison/                 # Dual scheduler comparator running identical inputs
+│   └── comparator.py
+├── metrics/                    # Performance, disparity, and Jain's fairness metrics
+│   └── calculator.py
+├── results/                    # Benchmark results, CSV summaries, and Matplotlib plots
+│   ├── baseline_workload_results.csv   # Preserved original pre-audit baseline
+│   ├── workload_results.csv            # Verified multi-scale experimental results
+│   ├── benchmark_experiments.py       # Deterministic workload generator & runner
+│   ├── generate_graphs.py             # Headless Matplotlib chart generator
+│   └── summary.py                     # Formatted CLI summary table
+├── scheduler/                  # Core scheduling infrastructure
+│   ├── process.py                      # Process dataclass and state lifecycle
+│   ├── normal_priority_scheduler.py   # Baseline preemptive priority scheduler
+│   ├── priority_scheduler.py          # StarveGuard adaptive priority scheduler
+│   └── gantt.py                       # Gantt chart segment extraction and ASCII renderer
+├── tests/                      # Full unittest regression test suite (34 tests)
+│   ├── test_process.py
+│   ├── test_detector.py
+│   ├── test_aging.py
+│   ├── test_aging_prevention.py
+│   ├── test_normal_priority.py
+│   ├── test_scheduler.py
+│   ├── test_metrics.py
+│   ├── test_comparison.py
+│   ├── test_demo.py
+│   ├── test_starvation.py
+│   ├── test_workloads.py
+│   └── test_regression.py             # Rigorous coverage of all 16 audit edge cases
+├── ui/                         # Tkinter desktop GUI dashboard
+│   └── app.py
+├── main.py                     # Interactive and non-interactive CLI runner
+└── README.md                   # Technical documentation
 ```
 
 ---
 
-## Getting Started
+## 8. Getting Started & Reproducibility
 
-### 1. Prerequisites & Installation
-Requires **Python 3.10+** (uses standard libraries `tkinter`, `dataclasses`, `csv`).
+### Prerequisites
+- **Python 3.10+** (standard libraries: `tkinter`, `dataclasses`, `csv`, `random`).
+- **Matplotlib** (for generating chart images in `results/`):
+  ```bash
+  pip install matplotlib
+  ```
 
+### Running the Test Suite
+Run the complete regression suite using Python's standard `unittest` framework:
 ```bash
-git clone https://github.com/ujvall/StarveGuard.git
-cd StarveGuard
+python -m unittest discover tests
+```
+*(34 tests covering all 16 edge cases should execute and pass with `OK`).*
 
-# Optional (only needed for generating standalone graph PNGs):
-pip install matplotlib
+### Running the Benchmark Suite
+To regenerate the multi-scale benchmark CSV and formatted terminal summary:
+```bash
+python results/benchmark_experiments.py
+python results/summary.py
 ```
 
-### 2. Launching the GUI Dashboard
+### Generating Benchmark Comparison Plots
+```bash
+python results/generate_graphs.py
+```
+Outputs:
+- `results/average_waiting_comparison.png`
+- `results/average_response_comparison.png`
+- `results/fairness_comparison.png`
+
+### Running the Desktop GUI
 ```bash
 python ui/app.py
 ```
-*Click **Load Demo Workload** then **Run Simulation** to see aging-induced priority reversal in real time.*
+*Click **Load Demo Workload** then **Run Simulation** to view dual Gantt charts, process metrics, and chronological aging logs.*
 
-### 3. Running via CLI
+### Running via CLI
 ```bash
+# Interactive mode:
 python main.py
-```
 
-### 4. Running the Benchmark Suite
-```bash
-python -m tests.test_workloads
+# Automated demonstration mode:
+python main.py --demo
 ```
 
 ---
 
-## Limitations & Future Work
+## 9. Assumptions, Scope & Limitations
 
-- **Static Parameters:** Fixed starvation threshold (`20`) and bypass weight (`2`) could be adapted dynamically to queue depth.
-- **Discrete Simulation:** Single-time-unit simulation model rather than an interrupt-driven kernel scheduler.
-- **Uniprocessor Scope:** Current model focuses on single-core scheduling; multi-core load balancing remains a future research avenue.
-
----
-
-## Technology Stack & Author
-
-| Component | Technology |
-| :--- | :--- |
-| **Core Algorithms** | Python 3 (Standard Library) |
-| **Desktop GUI** | Tkinter / ttk (Canvas Gantt charts, Treeviews) |
-| **Data & Plotting** | CSV, Matplotlib |
-
-**Author:** [Ujval Sai](https://github.com/ujvall)  
-**Repository:** [https://github.com/ujvall/StarveGuard](https://github.com/ujvall/StarveGuard)  
-*Academic Operating Systems simulation prototype for priority scheduling starvation mitigation.*
+1. **Uniprocessor Scope:** The scheduling engine models a single execution core. Multi-core scheduling with processor affinity is outside project scope.
+2. **Discrete Time Quantum:** Time is modeled in integer quanta ($\Delta t = 1$), representing CPU clock cycles.
+3. **Maximum Aging Ceiling:** Because the aging boost ceiling is $+3$, processes with very low base priorities ($\ge 8$) cannot overtake apex processes (priorities 1–4) under constant high-priority arrival streams.

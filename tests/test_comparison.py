@@ -1,33 +1,38 @@
+import unittest
 from comparison.comparator import SchedulerComparator
-from scheduler.gantt import generate_gantt_chart
 
-process_data = [
-    ("P1", 0, 20, 6),
-    ("P2", 0, 5, 8),
-    ("P3", 0, 5, 9)
-]
 
-comparator = SchedulerComparator(process_data)
+class TestSchedulerComparator(unittest.TestCase):
 
-normal = comparator.run_normal()
-starveguard = comparator.run_starveguard()
+    def test_comparator_execution(self):
+        process_data = [
+            ("P1", 0, 20, 6),
+            ("P2", 0, 5, 8),
+            ("P3", 0, 5, 9)
+        ]
 
-print("\nNORMAL PRIORITY GANTT")
-generate_gantt_chart(normal["scheduler"].gantt_chart)
+        comparator = SchedulerComparator(process_data)
+        normal = comparator.run_normal()
+        starveguard = comparator.run_starveguard()
 
-print("\nSTARVEGUARD GANTT")
-generate_gantt_chart(starveguard["scheduler"].gantt_chart)
+        # Both runs must contain complete results
+        for res in [normal, starveguard]:
+            self.assertIn("processes", res)
+            self.assertIn("scheduler", res)
+            self.assertIn("average_waiting", res)
+            self.assertIn("average_turnaround", res)
+            self.assertIn("average_response", res)
+            self.assertIn("maximum_waiting", res)
+            self.assertIn("fairness", res)
 
-print("\nNORMAL PRIORITY")
-print("Average Waiting:", normal["average_waiting"])
-print("Average Turnaround:", normal["average_turnaround"])
-print("Average Response:", normal["average_response"])
-print("Maximum Waiting:", normal["maximum_waiting"])
+        # StarveGuard specific metrics
+        self.assertIn("starved_processes", starveguard)
+        self.assertIn("protected_processes", starveguard)
+        self.assertIn("aging_interventions", starveguard)
 
-print("\nSTARVEGUARD")
-print("Average Waiting:", starveguard["average_waiting"])
-print("Average Turnaround:", starveguard["average_turnaround"])
-print("Average Response:", starveguard["average_response"])
-print("Maximum Waiting:", starveguard["maximum_waiting"])
-print("Starved Processes:", starveguard["starved_processes"])
-print("Aging Interventions:", starveguard["aging_interventions"])
+        # Independent process instances
+        self.assertIsNot(normal["processes"][0], starveguard["processes"][0])
+
+
+if __name__ == "__main__":
+    unittest.main()

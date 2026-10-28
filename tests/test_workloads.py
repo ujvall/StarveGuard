@@ -1,8 +1,9 @@
 import csv
+import unittest
 from comparison.comparator import SchedulerComparator
 
 
-workloads = {
+WORKLOADS = {
     "Workload 1": [
         ("P1", 0, 20, 6),
         ("P2", 0, 5, 8),
@@ -26,105 +27,77 @@ workloads = {
     ]
 }
 
-results = []
 
-for name, process_data in workloads.items():
+class TestWorkloadBenchmarks(unittest.TestCase):
 
-    comparator = SchedulerComparator(process_data)
+    def test_all_workloads_completion(self):
+        for name, data in WORKLOADS.items():
+            comparator = SchedulerComparator(data)
+            normal = comparator.run_normal()
+            starveguard = comparator.run_starveguard()
 
-    normal = comparator.run_normal()
-    starveguard = comparator.run_starveguard()
+            # Verify all processes completed
+            for p in normal["processes"]:
+                self.assertEqual(p.remaining_time, 0, f"{name}: normal {p.pid} did not finish")
+                self.assertEqual(p.waiting_time, p.turnaround_time - p.burst_time)
 
-    results.append([
-        name,
-        normal["average_waiting"],
-        starveguard["average_waiting"],
-        normal["average_turnaround"],
-        starveguard["average_turnaround"],
-        normal["average_response"],
-        starveguard["average_response"],
-        normal["maximum_waiting"],
-        starveguard["maximum_waiting"],
-        normal["fairness"],
-        starveguard["fairness"],
-        starveguard["starved_processes"],
-        starveguard["protected_processes"],
-        starveguard["aging_interventions"]
-    ])
+            for p in starveguard["processes"]:
+                self.assertEqual(p.remaining_time, 0, f"{name}: SG {p.pid} did not finish")
+                self.assertEqual(p.waiting_time, p.turnaround_time - p.burst_time)
 
-    print(f"\n{name}")
-    print("-" * 40)
+            self.assertGreaterEqual(normal["fairness"], 0.0)
+            self.assertLessEqual(normal["fairness"], 1.0)
+            self.assertGreaterEqual(starveguard["fairness"], 0.0)
+            self.assertLessEqual(starveguard["fairness"], 1.0)
 
-    print(
-        "Average Waiting:",
-        normal["average_waiting"],
-        "->",
-        starveguard["average_waiting"]
-    )
 
-    print(
-        "Average Turnaround:",
-        normal["average_turnaround"],
-        "->",
-        starveguard["average_turnaround"]
-    )
+def generate_results_csv(output_path="results/workload_results.csv"):
+    results = []
+    for name, data in WORKLOADS.items():
+        comparator = SchedulerComparator(data)
+        normal = comparator.run_normal()
+        starveguard = comparator.run_starveguard()
 
-    print(
-        "Average Response:",
-        normal["average_response"],
-        "->",
-        starveguard["average_response"]
-    )
+        results.append([
+            name,
+            normal["average_waiting"],
+            starveguard["average_waiting"],
+            normal["average_turnaround"],
+            starveguard["average_turnaround"],
+            normal["average_response"],
+            starveguard["average_response"],
+            normal["maximum_waiting"],
+            starveguard["maximum_waiting"],
+            normal["fairness"],
+            starveguard["fairness"],
+            starveguard["starved_processes"],
+            starveguard["protected_processes"],
+            starveguard["aging_interventions"]
+        ])
 
-    print(
-        "Maximum Waiting:",
-        normal["maximum_waiting"],
-        "->",
-        starveguard["maximum_waiting"]
-    )
+    with open(output_path, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([
+            "Workload",
+            "Normal Avg Waiting",
+            "StarveGuard Avg Waiting",
+            "Normal Avg Turnaround",
+            "StarveGuard Avg Turnaround",
+            "Normal Avg Response",
+            "StarveGuard Avg Response",
+            "Normal Max Waiting",
+            "StarveGuard Max Waiting",
+            "Normal Fairness",
+            "StarveGuard Fairness",
+            "Starved Processes",
+            "Protected Processes",
+            "Aging Interventions"
+        ])
+        writer.writerows(results)
 
-    print(
-        "Fairness:",
-        normal["fairness"],
-        "->",
-        starveguard["fairness"]
-    )
+    print(f"Results saved to {output_path}")
 
-    print(
-        "Starved Processes:",
-        starveguard["starved_processes"]
-    )
 
-    print(
-        "Protected Processes:",
-        starveguard["protected_processes"]
-    )
-
-    print(
-        "Aging Interventions:",
-        starveguard["aging_interventions"]
-    )
-
-with open("results/workload_results.csv", "w", newline="") as file:
-    writer = csv.writer(file)
-
-    writer.writerow([
-        "Workload",
-        "Normal Avg Waiting",
-        "StarveGuard Avg Waiting",
-        "Normal Avg Turnaround",
-        "StarveGuard Avg Turnaround",
-        "Normal Avg Response",
-        "StarveGuard Avg Response",
-        "Normal Max Waiting",
-        "StarveGuard Max Waiting",
-        "Normal Fairness",
-        "StarveGuard Fairness",
-        "Starved Processes",
-        "Protected Processes",
-        "Aging Interventions"
-    ])
-
-    writer.writerows(results)
-
-print("\nResults saved to results/workload_results.csv")
+if __name__ == "__main__":
+    generate_results_csv()
+    unittest.main()

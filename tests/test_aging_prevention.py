@@ -1,35 +1,31 @@
+import unittest
 from scheduler.process import Process
 from scheduler.priority_scheduler import PriorityScheduler
-from scheduler.gantt import generate_gantt_chart
 
-processes = [
-    Process("P1", 0, 20, 6),
-    Process("P2", 0, 5, 8),
-    Process("P3", 0, 5, 9)
-]
 
-scheduler = PriorityScheduler(processes)
-gantt = scheduler.run()
+class TestAgingPrevention(unittest.TestCase):
 
-generate_gantt_chart(gantt)
+    def test_aging_prevention_events(self):
+        processes = [
+            Process("P1", 0, 20, 6),
+            Process("P2", 0, 5, 8),
+            Process("P3", 0, 5, 9)
+        ]
 
-print("\nAging Events:")
+        scheduler = PriorityScheduler(processes)
+        gantt = scheduler.run()
 
-for event in scheduler.aging_events:
-    print(
-        "Time:", event[0],
-        "Process:", event[1],
-        "Priority:", event[2], "->", event[3],
-        "Score:", event[4]
-    )
+        self.assertGreater(len(gantt), 0)
+        self.assertGreater(len(scheduler.aging_events), 0)
 
-print("\nFinal Results:")
+        # Verify aging event structure: (time, pid, old_prio, new_prio, score)
+        for event in scheduler.aging_events:
+            t, pid, old_p, new_p, score = event
+            self.assertGreaterEqual(t, 0)
+            self.assertIn(pid, ["P1", "P2", "P3"])
+            self.assertGreater(old_p, new_p)  # Lower number = higher priority
+            self.assertGreaterEqual(score, 10)
 
-for p in processes:
-    print(
-        p.pid,
-        "Completion:", p.completion_time,
-        "Waiting:", p.waiting_time,
-        "Final Priority:", p.current_priority,
-        "Aging Adjustments:", p.aging_adjustments
-    )
+
+if __name__ == "__main__":
+    unittest.main()

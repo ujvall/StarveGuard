@@ -1,35 +1,43 @@
 import csv
+import os
 
+filepath = os.path.join(os.path.dirname(__file__), "workload_results.csv")
 
-with open("results/workload_results.csv", "r") as file:
+with open(filepath, "r") as file:
     reader = csv.DictReader(file)
 
-    print("\nSTARVEGUARD EXPERIMENT SUMMARY")
-    print("=" * 125)
+    print("\nSTARVEGUARD EXPERIMENTAL BENCHMARK SUMMARY")
+    print("=" * 145)
 
     print(
-        f"{'Workload':<12}"
-        f"{'Normal Wait':<15}"
-        f"{'StarveGuard Wait':<18}"
-        f"{'Normal Response':<18}"
-        f"{'StarveGuard Response':<22}"
-        f"{'Normal Fairness':<18}"
-        f"{'StarveGuard Fairness':<22}"
-        f"{'Starved':<12}"
-        f"{'Protected':<12}"
+        f"{'Workload Scenario':<36}"
+        f"{'N':<5}"
+        f"{'Normal Wait':<13}"
+        f"{'SG Wait':<13}"
+        f"{'Normal Resp':<13}"
+        f"{'SG Resp':<13}"
+        f"{'Normal Fair':<13}"
+        f"{'SG Fair':<13}"
+        f"{'Starved':<9}"
+        f"{'Protected':<11}"
+        f"{'Aged Events':<12}"
     )
 
-    print("-" * 133)
+    print("-" * 145)
 
     for row in reader:
+        procs = row.get("Processes", "-")
         print(
-            f"{row['Workload']:<12}"
-            f"{float(row['Normal Avg Waiting']):<15.2f}"
-            f"{float(row['StarveGuard Avg Waiting']):<18.2f}"
-            f"{float(row['Normal Avg Response']):<18.2f}"
-            f"{float(row['StarveGuard Avg Response']):<22.2f}"
-            f"{float(row['Normal Fairness']):<18.3f}"
-            f"{float(row['StarveGuard Fairness']):<20.3f}"
-            f"{row['Starved Processes']:<10}"
-            f"{row['Protected Processes']:<10}"
+            f"{row['Workload']:<36}"
+            f"{procs:<5}"
+            f"{float(row['Normal Avg Waiting']):<13.2f}"
+            f"{float(row['StarveGuard Avg Waiting']):<13.2f}"
+            f"{float(row['Normal Avg Response']):<13.2f}"
+            f"{float(row['StarveGuard Avg Response']):<13.2f}"
+            f"{float(row['Normal Fairness']):<13.3f}"
+            f"{float(row['StarveGuard Fairness']):<13.3f}"
+            f"{row['Starved Processes']:<9}"
+            f"{row['Protected Processes']:<11}"
+            f"{row['Aging Interventions']:<12}"
         )
+    print()

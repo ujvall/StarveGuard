@@ -1,80 +1,32 @@
+import unittest
 from comparison.comparator import SchedulerComparator
-from scheduler.gantt import generate_gantt_chart
 
 
-process_data = [
-    ("P1", 0, 30, 6),
-    ("P2", 0, 10, 8),
-    ("P3", 0, 10, 9)
-]
+class TestDemoWorkload(unittest.TestCase):
 
-comparator = SchedulerComparator(process_data)
+    def test_demo_execution(self):
+        process_data = [
+            ("P1", 0, 15, 6),
+            ("P2", 0, 5, 3),
+            ("P3", 5, 5, 3),
+            ("P4", 10, 5, 3)
+        ]
 
-normal = comparator.run_normal()
-starveguard = comparator.run_starveguard()
+        comparator = SchedulerComparator(process_data)
+        normal = comparator.run_normal()
+        starveguard = comparator.run_starveguard()
 
-print("\nNORMAL PRIORITY")
-generate_gantt_chart(normal["scheduler"].gantt_chart)
+        # Both runs finish all jobs
+        for p in normal["processes"]:
+            self.assertEqual(p.remaining_time, 0)
+        for p in starveguard["processes"]:
+            self.assertEqual(p.remaining_time, 0)
 
-print("\nSTARVEGUARD")
-generate_gantt_chart(starveguard["scheduler"].gantt_chart)
+        # StarveGuard P1 waited while P2, P3 ran and received aging
+        p1 = [p for p in starveguard["processes"] if p.pid == "P1"][0]
+        self.assertGreater(p1.aging_adjustments, 0)
+        self.assertLess(p1.current_priority, p1.original_priority)
 
-print("\nPROCESS RESULTS")
 
-for p in starveguard["processes"]:
-    print(
-        p.pid,
-        "Waiting:", p.waiting_time,
-        "Original Priority:", p.original_priority,
-        "Final Priority:", p.current_priority,
-        "Aging Adjustments:", p.aging_adjustments
-    )
-
-print("\nAGING EVENTS")
-
-for event in starveguard["scheduler"].aging_events:
-    time, pid, old_priority, new_priority, score = event
-
-    print(
-        "Time:", time,
-        "Process:", pid,
-        "Priority:", old_priority, "->", new_priority,
-        "Score:", score
-    )
-
-print("\nCOMPARISON")
-
-print(
-    "Average Waiting:",
-    normal["average_waiting"],
-    "->",
-    starveguard["average_waiting"]
-)
-
-print(
-    "Average Turnaround:",
-    normal["average_turnaround"],
-    "->",
-    starveguard["average_turnaround"]
-)
-
-print(
-    "Average Response:",
-    normal["average_response"],
-    "->",
-    starveguard["average_response"]
-)
-
-print(
-    "Maximum Waiting:",
-    normal["maximum_waiting"],
-    "->",
-    starveguard["maximum_waiting"]
-)
-
-print(
-    "Fairness:",
-    normal["fairness"],
-    "->",
-    starveguard["fairness"]
-)
+if __name__ == "__main__":
+    unittest.main()

@@ -47,7 +47,7 @@ header_frame.pack(side="top", fill="x")
 
 title_label = tk.Label(
     header_frame,
-    text="StarveGaurd",
+    text="StarveGuard",
     font=("Tahoma", 16, "bold"),
     fg="#FFFFFF",
     bg="#0A246A",
@@ -386,7 +386,7 @@ metric_definitions = [
     ),
     (
         "Starvation Score",
-        "Waiting Time + (Bypass Count × Bypass Weight), where the current bypass weight is 2.",
+        "Waiting Time + (Bypass Count × Bypass Weight), measuring queue waiting time and dispatch bypass events.",
         1, 1
     ),
     (

@@ -1,7 +1,14 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Process:
+    """
+    Represents a process / task in the CPU scheduler.
+
+    Priority convention:
+        Lower numerical value represents higher scheduling priority (e.g., priority 1 is highest).
+    """
     pid: str
     arrival_time: int
     burst_time: int
@@ -21,3 +28,12 @@ class Process:
     def __post_init__(self):
         self.remaining_time = self.burst_time
         self.current_priority = self.original_priority
+
+    def clone(self) -> "Process":
+        """Produce an independent copy with initial state."""
+        return Process(
+            pid=self.pid,
+            arrival_time=self.arrival_time,
+            burst_time=self.burst_time,
+            original_priority=self.original_priority
+        )
