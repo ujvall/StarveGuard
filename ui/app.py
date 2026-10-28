@@ -3,8 +3,12 @@ import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from comparison.comparator import SchedulerComparator
+from results.generate_graphs import build_figure, CHART_CONFIGS
 
 
 root = tk.Tk()
@@ -841,50 +845,80 @@ def display_aging_events(events):
             aging_tree.insert("", "end", values=event)
 
 
-def show_graph(graph_name):
-    graph_map = {
-        "waiting": ("average_waiting_comparison.png", "Average Waiting Time Comparison"),
-        "response": ("average_response_comparison.png", "Average Response Time Comparison"),
-        "fairness": ("fairness_comparison.png", "Fairness Comparison"),
-    }
+active_graph_windows = {}
 
-    if graph_name not in graph_map:
+
+def show_graph(graph_name):
+    if graph_name not in CHART_CONFIGS:
         return
 
-    filename, win_title = graph_map[graph_name]
-    filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", filename))
+    # Prevent duplicate windows stacking if user clicks repeatedly
+    if graph_name in active_graph_windows:
+        existing_win = active_graph_windows[graph_name]
+        try:
+            if existing_win.winfo_exists():
+                existing_win.lift()
+                existing_win.focus_force()
+                return
+        except Exception:
+            pass
 
-    if not os.path.exists(filepath):
+    cfg = CHART_CONFIGS[graph_name]
+    win_title = cfg.get("win_title", f"{graph_name.capitalize()} Comparison")
+    csv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "workload_results.csv"))
+
+    if not os.path.exists(csv_path):
         messagebox.showwarning(
-            "Graph File Not Found",
-            f"Could not locate image file:\n{filepath}\n\nPlease run results/generate_graphs.py first."
+            "Benchmark Data Not Found",
+            f"Could not locate benchmark data file:\n{csv_path}\n\nPlease run results/benchmark_experiments.py first."
         )
         return
 
     top = tk.Toplevel(root)
-    top.title(win_title)
-    top.geometry("1040x670")
+    top.title(f"StarveGuard - {win_title}")
+    top.geometry("1020x650")
+    top.minsize(800, 500)
     top.configure(bg="#F0F0F0")
+    active_graph_windows[graph_name] = top
 
-    photo = tk.PhotoImage(file=filepath)
-    lbl = tk.Label(top, image=photo, bg="#F0F0F0")
-    lbl.image = photo
-    lbl.pack(padx=15, pady=12)
+    # Container frame for responsive Matplotlib canvas
+    canvas_container = tk.Frame(top, bg="#FFFFFF", bd=1, relief="sunken")
+    canvas_container.pack(fill=tk.BOTH, expand=True, padx=12, pady=(12, 6))
+
+    # Build responsive figure
+    fig = build_figure(graph_name, csv_path=csv_path, figsize=(9.5, 5.5))
+    canvas = FigureCanvasTkAgg(fig, master=canvas_container)
+    canvas.draw()
+    canvas_widget = canvas.get_tk_widget()
+    canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+    # Bottom action bar with Close button
+    bottom_bar = tk.Frame(top, bg="#F0F0F0")
+    bottom_bar.pack(fill=tk.X, padx=12, pady=(4, 10))
+
+    def on_close():
+        if graph_name in active_graph_windows:
+            del active_graph_windows[graph_name]
+        plt.close(fig)
+        top.destroy()
+
+    top.protocol("WM_DELETE_WINDOW", on_close)
 
     close_btn = tk.Button(
-        top,
-        text="Close",
+        bottom_bar,
+        text="Close Window",
         font=("Tahoma", 9, "bold"),
         bg="#F0F0F0",
         fg="#000000",
+        activebackground="#E0E0E0",
         relief="raised",
         bd=2,
         cursor="hand2",
         padx=14,
         pady=4,
-        command=top.destroy
+        command=on_close
     )
-    close_btn.pack(pady=(0, 10))
+    close_btn.pack(side="right")
 
 
 def load_demo():
@@ -1029,4 +1063,5 @@ run_button.bind("<Return>", lambda event: run_simulation())
 
 input_widgets[0].focus_set()
 
-root.mainloop()
+if __name__ == "__main__":
+    root.mainloop()
