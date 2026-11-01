@@ -1,0 +1,135 @@
+=========================================================================================================
+STARVEGUARD TTCA v2-B+ ADVANCED OPTIMIZATION RESEARCH & BENCHMARK REPORT
+Timestamp: 2026-11-01 23:19:13
+Git Commit Hash: 5f61ed5bec477dbc51d3631ee859e06d4f3df681
+Benchmark Execution Duration: 1103.11 seconds
+=========================================================================================================
+
+1. EXECUTIVE SUMMARY & EXPERIMENTAL VERDICT
+---------------------------------------------------------------------------------------------------------
+This report documents the rigorous, multi-scale evaluation of Candidate B advanced variants
+designed to discover whether a better scheduling decision can be made at every dispatch point
+while strictly preserving priority supremacy, apex isolation, and starvation protection.
+
+Evaluated Scheduling Variants:
+  [normal            ] -> Normal Priority
+  [ttca              ] -> Original TTCA
+  [ttca_v2b_cand_b0  ] -> Candidate B0 (SRTF Control)
+  [ttca_v2b_cand_b1  ] -> Candidate B1 (Queue-Pressure)
+  [ttca_v2b_cand_b2  ] -> Candidate B2 (Starvation-Aware SRTF)
+  [ttca_v2b_cand_b3  ] -> Candidate B3 (Preemption-Efficient)
+  [ttca_v2b_cand_b4  ] -> Candidate B4 (Best Hybrid)
+
+2. MULTI-SCALE MEAN LATENCY & FAIRNESS COMPARISON (STANDARD MATRIX)
+---------------------------------------------------------------------------------------------------------
+Scale      | Policy                   | Avg Wait  | Med Wait  | p95 Wait  | Max Wait  | Avg Resp  | Fairness | Starved%
+---------------------------------------------------------------------------------------------------------
+small      | Normal Priority          |     34.84 |     25.35 |      86.7 |      95.6 |     30.38 |    0.712 |    44.7%
+small      | Original TTCA            |     36.10 |     28.14 |      87.3 |      95.5 |     28.41 |    0.707 |    49.8%
+small      | Candidate B0 (SRTF Control) |     34.84 |     26.12 |      86.6 |      95.5 |     27.70 |    0.717 |    48.1%
+small      | Candidate B1 (Queue-Pressure) |     34.84 |     26.10 |      86.6 |      95.5 |     27.59 |    0.717 |    48.1%
+small      | Candidate B2 (Starvation-Aware SRTF) |     34.85 |     26.13 |      86.6 |      95.5 |     27.69 |    0.717 |    48.1%
+small      | Candidate B3 (Preemption-Efficient) |     34.84 |     26.12 |      86.6 |      95.5 |     27.70 |    0.717 |    48.1%
+small      | Candidate B4 (Best Hybrid) |     34.85 |     26.11 |      86.6 |      95.5 |     27.58 |    0.717 |    48.1%
+---------------------------------------------------------------------------------------------------------
+medium     | Normal Priority          |    212.71 |    163.91 |     556.8 |     607.3 |    206.28 |    0.385 |    71.8%
+medium     | Original TTCA            |    215.60 |    167.89 |     556.8 |     607.3 |    209.13 |    0.345 |    79.5%
+medium     | Candidate B0 (SRTF Control) |    203.56 |    141.76 |     551.6 |     620.3 |    196.35 |    0.390 |    74.9%
+medium     | Candidate B1 (Queue-Pressure) |    203.53 |    141.63 |     551.6 |     620.3 |    196.21 |    0.390 |    74.8%
+medium     | Candidate B2 (Starvation-Aware SRTF) |    203.93 |    145.16 |     550.7 |     615.9 |    196.97 |    0.385 |    75.2%
+medium     | Candidate B3 (Preemption-Efficient) |    203.56 |    141.76 |     551.6 |     620.3 |    196.35 |    0.390 |    74.9%
+medium     | Candidate B4 (Best Hybrid) |    203.89 |    145.05 |     550.7 |     615.9 |    196.87 |    0.385 |    75.2%
+---------------------------------------------------------------------------------------------------------
+large      | Normal Priority          |    439.87 |    351.92 |    1142.3 |    1230.3 |    433.00 |    0.301 |    76.0%
+large      | Original TTCA            |    447.53 |    354.29 |    1142.3 |    1230.3 |    440.79 |    0.246 |    83.8%
+large      | Candidate B0 (SRTF Control) |    418.98 |    306.33 |    1131.4 |    1275.1 |    411.52 |    0.297 |    79.2%
+large      | Candidate B1 (Queue-Pressure) |    418.95 |    306.35 |    1131.4 |    1275.1 |    411.30 |    0.297 |    79.2%
+large      | Candidate B2 (Starvation-Aware SRTF) |    421.43 |    309.05 |    1130.9 |    1252.0 |    414.45 |    0.286 |    80.0%
+large      | Candidate B3 (Preemption-Efficient) |    418.98 |    306.33 |    1131.4 |    1275.1 |    411.52 |    0.297 |    79.2%
+large      | Candidate B4 (Best Hybrid) |    421.38 |    309.02 |    1130.9 |    1252.0 |    414.29 |    0.286 |    80.0%
+---------------------------------------------------------------------------------------------------------
+very_large | Normal Priority          |   1106.98 |    881.88 |    2889.1 |    3081.6 |   1100.37 |    0.241 |    78.5%
+very_large | Original TTCA            |   1125.30 |    882.20 |    2889.1 |    3081.6 |   1119.41 |    0.173 |    87.2%
+very_large | Candidate B0 (SRTF Control) |   1051.61 |    747.16 |    2852.4 |    3228.2 |   1044.63 |    0.232 |    81.8%
+very_large | Candidate B1 (Queue-Pressure) |   1051.54 |    747.05 |    2852.4 |    3228.2 |   1044.38 |    0.232 |    81.8%
+very_large | Candidate B2 (Starvation-Aware SRTF) |   1070.00 |    773.11 |    2856.1 |    3118.7 |   1063.82 |    0.205 |    84.0%
+very_large | Candidate B3 (Preemption-Efficient) |   1051.61 |    747.16 |    2852.4 |    3228.2 |   1044.63 |    0.232 |    81.8%
+very_large | Candidate B4 (Best Hybrid) |   1069.93 |    773.10 |    2856.1 |    3118.7 |   1063.62 |    0.206 |    84.0%
+---------------------------------------------------------------------------------------------------------
+stress     | Normal Priority          |   2222.24 |   1775.31 |    5790.9 |    6159.2 |   2215.97 |    0.217 |    79.5%
+stress     | Original TTCA            |   2258.28 |   1780.38 |    5790.9 |    6159.2 |   2252.57 |    0.143 |    88.6%
+stress     | Candidate B0 (SRTF Control) |   2108.08 |   1488.50 |    5715.6 |    6500.1 |   2101.11 |    0.205 |    82.9%
+stress     | Candidate B1 (Queue-Pressure) |   2107.99 |   1488.17 |    5715.6 |    6500.1 |   2100.83 |    0.205 |    82.9%
+stress     | Candidate B2 (Starvation-Aware SRTF) |   2165.29 |   1578.53 |    5735.9 |    6198.4 |   2159.35 |    0.169 |    86.1%
+stress     | Candidate B3 (Preemption-Efficient) |   2108.08 |   1488.50 |    5715.6 |    6500.1 |   2101.12 |    0.205 |    82.9%
+stress     | Candidate B4 (Best Hybrid) |   2165.21 |   1578.70 |    5735.9 |    6198.4 |   2159.15 |    0.169 |    86.0%
+---------------------------------------------------------------------------------------------------------
+
+3. INDEPENDENT OUT-OF-SAMPLE & ADVERSARIAL VALIDATION SCENARIOS
+---------------------------------------------------------------------------------------------------------
+Scenario             | Policy                   | Avg Wait  | p95 Wait  | Max Wait  | Cont.Wait | Starved%
+---------------------------------------------------------------------------------------------------------
+VAL_SHORT_STREAM     | Normal Priority          |     18.90 |      23.6 |     331.8 |     331.8 |     8.1%
+VAL_SHORT_STREAM     | Original TTCA            |    109.81 |     131.7 |     300.8 |     300.8 |    87.1%
+VAL_SHORT_STREAM     | Candidate B0 (SRTF Control) |     17.00 |      35.2 |     327.8 |     327.8 |    11.9%
+VAL_SHORT_STREAM     | Candidate B1 (Queue-Pressure) |     17.00 |      35.2 |     327.8 |     327.8 |    11.9%
+VAL_SHORT_STREAM     | Candidate B2 (Starvation-Aware SRTF) |     17.08 |      35.6 |     327.8 |     327.8 |    12.2%
+VAL_SHORT_STREAM     | Candidate B3 (Preemption-Efficient) |     17.00 |      35.2 |     327.8 |     327.8 |    11.9%
+VAL_SHORT_STREAM     | Candidate B4 (Best Hybrid) |     17.08 |      35.6 |     327.8 |     327.8 |    12.2%
+---------------------------------------------------------------------------------------------------------
+VAL_LONG_STREAM      | Normal Priority          |   1745.10 |    3716.3 |    3900.5 |    3900.5 |    90.5%
+VAL_LONG_STREAM      | Original TTCA            |   1734.40 |    3716.3 |    3900.5 |    3900.5 |    92.2%
+VAL_LONG_STREAM      | Candidate B0 (SRTF Control) |   1657.32 |    3749.4 |    4178.0 |    4178.0 |    91.6%
+VAL_LONG_STREAM      | Candidate B1 (Queue-Pressure) |   1657.34 |    3749.4 |    4178.0 |    4178.0 |    91.6%
+VAL_LONG_STREAM      | Candidate B2 (Starvation-Aware SRTF) |   1692.06 |    3709.9 |    3968.1 |    3968.1 |    91.7%
+VAL_LONG_STREAM      | Candidate B3 (Preemption-Efficient) |   1657.32 |    3749.4 |    4178.0 |    4178.0 |    91.6%
+VAL_LONG_STREAM      | Candidate B4 (Best Hybrid) |   1692.07 |    3709.9 |    3968.1 |    3968.1 |    91.7%
+---------------------------------------------------------------------------------------------------------
+VAL_P1_SATURATION    | Normal Priority          |    320.06 |     950.8 |    1061.5 |    1061.5 |    92.0%
+VAL_P1_SATURATION    | Original TTCA            |    320.11 |     950.8 |    1061.5 |    1061.5 |    92.0%
+VAL_P1_SATURATION    | Candidate B0 (SRTF Control) |    294.33 |     947.2 |    1087.1 |    1087.1 |    61.8%
+VAL_P1_SATURATION    | Candidate B1 (Queue-Pressure) |    294.33 |     947.2 |    1087.1 |    1087.1 |    61.8%
+VAL_P1_SATURATION    | Candidate B2 (Starvation-Aware SRTF) |    298.59 |     943.9 |    1076.1 |    1076.1 |    70.5%
+VAL_P1_SATURATION    | Candidate B3 (Preemption-Efficient) |    294.33 |     947.2 |    1087.1 |    1087.1 |    61.8%
+VAL_P1_SATURATION    | Candidate B4 (Best Hybrid) |    298.59 |     943.9 |    1076.1 |    1076.1 |    70.5%
+---------------------------------------------------------------------------------------------------------
+VAL_PRIORITY_GAPS    | Normal Priority          |    522.40 |    1365.7 |    1467.1 |    1467.1 |    64.0%
+VAL_PRIORITY_GAPS    | Original TTCA            |    522.63 |    1365.7 |    1467.1 |    1467.1 |    64.3%
+VAL_PRIORITY_GAPS    | Candidate B0 (SRTF Control) |    454.21 |    1439.9 |    1595.2 |    1595.2 |    64.2%
+VAL_PRIORITY_GAPS    | Candidate B1 (Queue-Pressure) |    454.16 |    1439.9 |    1595.2 |    1595.2 |    64.2%
+VAL_PRIORITY_GAPS    | Candidate B2 (Starvation-Aware SRTF) |    465.80 |    1366.4 |    1490.6 |    1490.6 |    64.3%
+VAL_PRIORITY_GAPS    | Candidate B3 (Preemption-Efficient) |    454.21 |    1439.9 |    1595.2 |    1595.2 |    64.2%
+VAL_PRIORITY_GAPS    | Candidate B4 (Best Hybrid) |    465.74 |    1366.4 |    1490.6 |    1490.6 |    64.3%
+---------------------------------------------------------------------------------------------------------
+VAL_QUEUE_BURST      | Normal Priority          |    679.65 |    1291.1 |    1359.3 |    1359.3 |    98.0%
+VAL_QUEUE_BURST      | Original TTCA            |    678.63 |    1291.1 |    1359.3 |    1359.3 |    98.0%
+VAL_QUEUE_BURST      | Candidate B0 (SRTF Control) |    632.66 |    1271.3 |    1350.4 |    1350.4 |    96.7%
+VAL_QUEUE_BURST      | Candidate B1 (Queue-Pressure) |    632.66 |    1271.3 |    1350.4 |    1350.4 |    96.7%
+VAL_QUEUE_BURST      | Candidate B2 (Starvation-Aware SRTF) |    632.66 |    1271.3 |    1350.4 |    1350.4 |    96.7%
+VAL_QUEUE_BURST      | Candidate B3 (Preemption-Efficient) |    632.66 |    1271.3 |    1350.4 |    1350.4 |    96.7%
+VAL_QUEUE_BURST      | Candidate B4 (Best Hybrid) |    632.66 |    1271.3 |    1350.4 |    1350.4 |    96.7%
+---------------------------------------------------------------------------------------------------------
+VAL_STAGGERED_WAVES  | Normal Priority          |    102.26 |     202.3 |     225.2 |     225.2 |    86.9%
+VAL_STAGGERED_WAVES  | Original TTCA            |    102.76 |     202.3 |     225.2 |     225.2 |    88.5%
+VAL_STAGGERED_WAVES  | Candidate B0 (SRTF Control) |     97.80 |     200.6 |     225.2 |     225.2 |    86.9%
+VAL_STAGGERED_WAVES  | Candidate B1 (Queue-Pressure) |     97.80 |     200.6 |     225.2 |     225.2 |    86.9%
+VAL_STAGGERED_WAVES  | Candidate B2 (Starvation-Aware SRTF) |     97.80 |     200.6 |     225.2 |     225.2 |    86.9%
+VAL_STAGGERED_WAVES  | Candidate B3 (Preemption-Efficient) |     97.80 |     200.6 |     225.2 |     225.2 |    86.9%
+VAL_STAGGERED_WAVES  | Candidate B4 (Best Hybrid) |     97.81 |     200.6 |     225.2 |     225.2 |    86.9%
+---------------------------------------------------------------------------------------------------------
+VAL_ADVERSARIAL      | Normal Priority          |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+VAL_ADVERSARIAL      | Original TTCA            |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+VAL_ADVERSARIAL      | Candidate B0 (SRTF Control) |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+VAL_ADVERSARIAL      | Candidate B1 (Queue-Pressure) |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+VAL_ADVERSARIAL      | Candidate B2 (Starvation-Aware SRTF) |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+VAL_ADVERSARIAL      | Candidate B3 (Preemption-Efficient) |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+VAL_ADVERSARIAL      | Candidate B4 (Best Hybrid) |     94.79 |     522.0 |     720.0 |     720.0 |    50.9%
+---------------------------------------------------------------------------------------------------------
+
+4. INVARIANT VALIDATION & REPRODUCIBILITY
+---------------------------------------------------------------------------------------------------------
+All 8 StarveGuard scheduling invariants were checked on EVERY policy run across all 1,260 workloads (8,820 runs).
+Result: 100% Invariant Compliance (0 violations detected).
+
+End of Report.
+=========================================================================================================

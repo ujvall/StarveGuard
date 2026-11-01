@@ -1,0 +1,74 @@
+==========================================================================================
+STARVEGUARD TTCA v2 PERFORMANCE EVALUATION & OPTIMIZATION REPORT
+Timestamp: 2026-11-01 19:37:27
+Git Commit Hash: 5f61ed5bec477dbc51d3631ee859e06d4f3df681
+Total Benchmark Duration: 2346.80 seconds
+==========================================================================================
+
+1. EXECUTIVE SUMMARY & ACCEPTANCE VERDICT
+------------------------------------------------------------------------------------------
+This report documents the rigorous, multi-scale evaluation of TTCA v2 optimization candidates
+designed to eliminate the Average Waiting Time (AWT) regression of Original TTCA and resolve
+the FCFS queue-clogging starvation paradox under burst heterogeneity.
+
+Evaluated Scheduling Policies:
+  [normal          ] -> Normal Priority
+  [capped          ] -> Capped Aging (+3)
+  [continuous_k5   ] -> Continuous Aging (K=5)
+  [ttca            ] -> TTCA (Original)
+  [ttca_v2_cand_a  ] -> TTCA v2 Cand A (Adaptive)
+  [ttca_v2_cand_b  ] -> TTCA v2 Cand B (SRTF Tie-Break)
+  [ttca_v2_cand_c  ] -> TTCA v2 Cand C (Dual-Tier Hybrid)
+
+2. MULTI-SCALE MEAN LATENCY & FAIRNESS COMPARISON
+------------------------------------------------------------------------------------------
+Scale      | Policy                 | Avg Wait  | Max Wait  | Avg TAT   | Avg Resp  | Fairness | Starved%
+------------------------------------------------------------------------------------------
+small      | Normal Priority        |     34.31 |      94.4 |     47.63 |     30.06 |    0.710 |    45.3%
+small      | Capped Aging (+3)      |     35.19 |      94.1 |     48.52 |     28.05 |    0.716 |    49.9%
+small      | Continuous Aging (K=5) |     37.46 |      92.0 |     50.78 |     24.72 |    0.717 |    50.4%
+small      | TTCA (Original)        |     35.73 |      94.1 |     49.06 |     27.89 |    0.703 |    50.3%
+small      | TTCA v2 Cand A (Adaptive) |     35.68 |      94.1 |     49.00 |     27.95 |    0.703 |    50.0%
+small      | TTCA v2 Cand B (SRTF Tie-Break) |     34.35 |      93.5 |     47.67 |     27.04 |    0.714 |    48.5%
+small      | TTCA v2 Cand C (Dual-Tier Hybrid) |     34.95 |      93.3 |     48.27 |     26.18 |    0.710 |    48.7%
+------------------------------------------------------------------------------------------
+medium     | Normal Priority        |    211.52 |     603.2 |    224.98 |    204.97 |    0.385 |    72.2%
+medium     | Capped Aging (+3)      |    212.65 |     603.2 |    226.11 |    205.45 |    0.367 |    82.8%
+medium     | Continuous Aging (K=5) |    288.83 |     567.3 |    302.29 |    283.09 |    0.299 |    90.6%
+medium     | TTCA (Original)        |    214.27 |     603.2 |    227.73 |    207.10 |    0.346 |    79.7%
+medium     | TTCA v2 Cand A (Adaptive) |    213.90 |     603.2 |    227.35 |    206.87 |    0.348 |    79.5%
+medium     | TTCA v2 Cand B (SRTF Tie-Break) |    202.61 |     616.2 |    216.07 |    195.23 |    0.391 |    74.8%
+medium     | TTCA v2 Cand C (Dual-Tier Hybrid) |    204.13 |     616.2 |    217.59 |    195.70 |    0.369 |    77.8%
+------------------------------------------------------------------------------------------
+large      | Normal Priority        |    435.09 |    1222.2 |    448.49 |    428.87 |    0.302 |    75.9%
+large      | Capped Aging (+3)      |    436.44 |    1222.2 |    449.84 |    430.16 |    0.256 |    89.1%
+large      | Continuous Aging (K=5) |    604.20 |    1164.4 |    617.60 |    601.06 |    0.185 |    95.4%
+large      | TTCA (Original)        |    441.87 |    1222.2 |    455.26 |    435.71 |    0.243 |    84.4%
+large      | TTCA v2 Cand A (Adaptive) |    441.66 |    1222.2 |    455.05 |    435.65 |    0.244 |    84.2%
+large      | TTCA v2 Cand B (SRTF Tie-Break) |    414.23 |    1261.5 |    427.63 |    407.49 |    0.296 |    79.3%
+large      | TTCA v2 Cand C (Dual-Tier Hybrid) |    416.52 |    1261.5 |    429.91 |    409.01 |    0.268 |    83.2%
+------------------------------------------------------------------------------------------
+very_large | Normal Priority        |   1109.15 |    3085.7 |   1122.61 |   1102.51 |    0.240 |    78.5%
+very_large | Capped Aging (+3)      |   1111.97 |    3085.7 |   1125.42 |   1105.44 |    0.167 |    92.6%
+very_large | Continuous Aging (K=5) |   1555.66 |    2963.0 |   1569.11 |   1553.84 |    0.100 |    98.1%
+very_large | TTCA (Original)        |   1127.07 |    3085.7 |   1140.52 |   1120.73 |    0.173 |    87.1%
+very_large | TTCA v2 Cand A (Adaptive) |   1126.95 |    3085.7 |   1140.41 |   1120.71 |    0.174 |    87.0%
+very_large | TTCA v2 Cand B (SRTF Tie-Break) |   1053.38 |    3238.0 |   1066.84 |   1046.15 |    0.231 |    82.0%
+very_large | TTCA v2 Cand C (Dual-Tier Hybrid) |   1056.02 |    3238.0 |   1069.47 |   1048.19 |    0.198 |    86.3%
+------------------------------------------------------------------------------------------
+stress     | Normal Priority        |   2229.44 |    6180.1 |   2242.87 |   2223.12 |    0.216 |    79.5%
+stress     | Capped Aging (+3)      |   2232.81 |    6180.1 |   2246.24 |   2226.99 |    0.126 |    94.2%
+stress     | Continuous Aging (K=5) |   3135.51 |    5955.8 |   3148.95 |   3134.26 |    0.062 |    99.1%
+stress     | TTCA (Original)        |   2266.25 |    6180.1 |   2279.69 |   2260.61 |    0.145 |    88.5%
+stress     | TTCA v2 Cand A (Adaptive) |   2266.20 |    6180.1 |   2279.64 |   2260.63 |    0.145 |    88.4%
+stress     | TTCA v2 Cand B (SRTF Tie-Break) |   2114.88 |    6524.8 |   2128.32 |   2107.77 |    0.204 |    83.0%
+stress     | TTCA v2 Cand C (Dual-Tier Hybrid) |   2117.76 |    6524.8 |   2131.20 |   2110.21 |    0.169 |    88.0%
+------------------------------------------------------------------------------------------
+
+3. INVARIANT VALIDATION & REPRODUCIBILITY
+------------------------------------------------------------------------------------------
+All 8 StarveGuard scheduling invariants were checked on EVERY policy run across all 1,050 trials.
+Result: 100% Invariant Compliance (0 violations detected).
+
+End of Report.
+==========================================================================================

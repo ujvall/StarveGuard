@@ -1,0 +1,37 @@
+{
+  "experiment_timestamp": "2026-11-01T18:58:15.970933",
+  "git_commit_hash": "5f61ed5bec477dbc51d3631ee859e06d4f3df681",
+  "python_version": "3.14.5 (main, May 12 2026, 01:59:30)  [MINGW GCC UCRT 16.1.0 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "scales": [
+    "small",
+    "medium",
+    "large",
+    "very_large",
+    "stress"
+  ],
+  "categories": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+  ],
+  "trials_per_combination": 30,
+  "total_workloads": 1050,
+  "total_simulations": 7350,
+  "policies": [
+    "normal",
+    "capped",
+    "continuous_k5",
+    "ttca",
+    "ttca_v2_cand_a",
+    "ttca_v2_cand_b",
+    "ttca_v2_cand_c"
+  ],
+  "all_invariants_verified": true,
+  "duration_seconds": 2346.8,
+  "output_directory": "C:\\Users\\ujval\\Desktop\\Projects\\StarveGuard\\results\\ttca_v2_evaluation"
+}

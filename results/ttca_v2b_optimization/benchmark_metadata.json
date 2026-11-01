@@ -1,0 +1,46 @@
+{
+  "experiment_timestamp": "2026-11-01T23:00:42.292552",
+  "git_commit_hash": "5f61ed5bec477dbc51d3631ee859e06d4f3df681",
+  "python_version": "3.14.5 (main, May 12 2026, 01:59:30)  [MINGW GCC UCRT 16.1.0 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "scales": [
+    "small",
+    "medium",
+    "large",
+    "very_large",
+    "stress"
+  ],
+  "categories": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+  ],
+  "validation_scenarios": [
+    "VAL_SHORT_STREAM",
+    "VAL_LONG_STREAM",
+    "VAL_P1_SATURATION",
+    "VAL_PRIORITY_GAPS",
+    "VAL_QUEUE_BURST",
+    "VAL_STAGGERED_WAVES",
+    "VAL_ADVERSARIAL"
+  ],
+  "trials_per_combination": 30,
+  "total_workloads": 1260,
+  "total_simulations": 8820,
+  "policies": [
+    "normal",
+    "ttca",
+    "ttca_v2b_cand_b0",
+    "ttca_v2b_cand_b1",
+    "ttca_v2b_cand_b2",
+    "ttca_v2b_cand_b3",
+    "ttca_v2b_cand_b4"
+  ],
+  "all_invariants_verified": true,
+  "duration_seconds": 1103.11,
+  "output_directory": "C:\\Users\\ujval\\Desktop\\Projects\\StarveGuard\\results\\ttca_v2b_optimization"
+}

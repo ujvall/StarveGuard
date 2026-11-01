@@ -1,0 +1,8 @@
+Category,Name,Description
+A,Balanced,Workload A — Balanced
+B,Priority Skew,Workload B — Priority Skew
+C,Short and Long Burst Mixture,Workload C — Short and Long Burst Mixture
+D,Heavy Contention,Workload D — Heavy Contention
+E,Staggered Arrivals,Workload E — Staggered Arrivals
+F,Starvation-Prone,Workload F — Starvation-Prone
+G,Mixed Realistic Workload,Workload G — Mixed Realistic Workload

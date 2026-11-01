@@ -1,0 +1,15 @@
+Category,Type,Name,Description
+A,Standard Synthetic,Balanced,Workload A — Balanced
+B,Standard Synthetic,Priority Skew,Workload B — Priority Skew
+C,Standard Synthetic,Short and Long Burst Mixture,Workload C — Short and Long Burst Mixture
+D,Standard Synthetic,Heavy Contention,Workload D — Heavy Contention
+E,Standard Synthetic,Staggered Arrivals,Workload E — Staggered Arrivals
+F,Standard Synthetic,Starvation-Prone,Workload F — Starvation-Prone
+G,Standard Synthetic,Mixed Realistic Workload,Workload G — Mixed Realistic Workload
+VAL_SHORT_STREAM,Independent Validation,Continuous Short Process Arrival Stream,Continuous Short Process Arrival Stream
+VAL_LONG_STREAM,Independent Validation,Continuous Long Process Arrival Stream,Continuous Long Process Arrival Stream
+VAL_P1_SATURATION,Independent Validation,Heavy Priority 1 Apex Saturation,Heavy Priority 1 Apex Saturation
+VAL_PRIORITY_GAPS,Independent Validation,Extreme Priority Disparity (P1 vs P10),Extreme Priority Disparity (P1 vs P10)
+VAL_QUEUE_BURST,Independent Validation,Massive Ready-Queue Congestion (All Arrival at t=0),Massive Ready-Queue Congestion (All Arrival at t=0)
+VAL_STAGGERED_WAVES,Independent Validation,Clustered Wave Arrivals with Execution Gaps,Clustered Wave Arrivals with Execution Gaps
+VAL_ADVERSARIAL,Independent Validation,Adversarial Starvation-Trapping Interleaved Arrivals,Adversarial Starvation-Trapping Interleaved Arrivals

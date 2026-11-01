@@ -62,6 +62,57 @@ class MetricsCalculator:
         variance = sum((p.waiting_time - avg) ** 2 for p in self.processes) / len(self.processes)
         return math.sqrt(variance)
 
+    def median_waiting_time(self) -> float:
+        """Median waiting time across all processes."""
+        if not self.processes:
+            return 0.0
+        sorted_wts = sorted(p.waiting_time for p in self.processes)
+        n = len(sorted_wts)
+        mid = n // 2
+        if n % 2 == 1:
+            return float(sorted_wts[mid])
+        else:
+            return (sorted_wts[mid - 1] + sorted_wts[mid]) / 2.0
+
+    def percentile_waiting_time(self, p: float = 95.0) -> float:
+        """Percentile waiting time (e.g. 95th, 99th) across processes."""
+        if not self.processes:
+            return 0.0
+        sorted_wts = sorted(p.waiting_time for p in self.processes)
+        if len(sorted_wts) == 1:
+            return float(sorted_wts[0])
+        k = (len(sorted_wts) - 1) * (p / 100.0)
+        f = math.floor(k)
+        c = math.ceil(k)
+        if f == c:
+            return float(sorted_wts[int(k)])
+        return float(sorted_wts[int(f)] * (c - k) + sorted_wts[int(c)] * (k - f))
+
+    def percentile_post_threshold_waiting_time(self, p: float = 95.0, threshold: int = 20) -> float:
+        """Percentile of additional waiting time among starved processes."""
+        starved = [proc.waiting_time - threshold for proc in self.processes if proc.waiting_time >= threshold]
+        if not starved:
+            return 0.0
+        sorted_wts = sorted(starved)
+        if len(sorted_wts) == 1:
+            return float(sorted_wts[0])
+        k = (len(sorted_wts) - 1) * (p / 100.0)
+        f = math.floor(k)
+        c = math.ceil(k)
+        if f == c:
+            return float(sorted_wts[int(k)])
+        return float(sorted_wts[int(f)] * (c - k) + sorted_wts[int(c)] * (k - f))
+
+    def longest_continuous_waiting_time(self) -> int:
+        """Longest single streak of consecutive clock ticks spent waiting."""
+        if not self.processes:
+            return 0
+        return max(getattr(p, "longest_continuous_wait", 0) for p in self.processes)
+
+    def preemption_count(self, scheduler) -> int:
+        """Count of preemption events during execution."""
+        return getattr(scheduler, "preemption_count", 0)
+
     def fairness_index(self) -> float:
         """
         Computes Jain's Fairness Index based on process execution efficiency ratio:
@@ -143,6 +194,20 @@ class MetricsCalculator:
         if not starved:
             return 0
         return max(p.waiting_time for p in starved)
+
+    def post_threshold_average_waiting_time(self, threshold: int = 20) -> float:
+        """Average additional waiting time accumulated after crossing the starvation threshold."""
+        starved = [p for p in self.processes if p.waiting_time >= threshold]
+        if not starved:
+            return 0.0
+        return sum(p.waiting_time - threshold for p in starved) / len(starved)
+
+    def post_threshold_maximum_waiting_time(self, threshold: int = 20) -> int:
+        """Maximum additional waiting time accumulated after crossing the starvation threshold."""
+        starved = [p for p in self.processes if p.waiting_time >= threshold]
+        if not starved:
+            return 0
+        return max(p.waiting_time - threshold for p in starved)
 
     def cpu_utilization(self, scheduler) -> float:
         """

@@ -24,6 +24,8 @@ class Process:
     aging_adjustments: int = 0
     starvation_detected: bool = False
     first_run_time: int = -1
+    current_wait_streak: int = 0
+    longest_continuous_wait: int = 0
 
     def __post_init__(self):
         self.remaining_time = self.burst_time

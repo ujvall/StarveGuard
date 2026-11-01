@@ -21,6 +21,7 @@ class NormalPriorityScheduler:
         self._last_running_pid: Optional[str] = None
         self.scheduling_decisions: int = 0
         self.decision_time_sec: float = 0.0
+        self.preemption_count: int = 0
 
     def get_ready_processes(self) -> List[Process]:
         return [
@@ -54,15 +55,25 @@ class NormalPriorityScheduler:
                 self._last_running_pid = None
                 continue
 
-            # Track dispatch bypass when a new process is selected
+            # Track dispatch bypass and preemption when a new process is selected
             is_new_dispatch = (self._last_running_pid != process.pid)
+            if is_new_dispatch and self._last_running_pid is not None:
+                last_p = next((p for p in self.processes if p.pid == self._last_running_pid), None)
+                if last_p and last_p.remaining_time > 0:
+                    self.preemption_count += 1
+
             ready = self.get_ready_processes()
 
             for p in ready:
                 if p.pid != process.pid:
                     p.waiting_time += 1
+                    p.current_wait_streak += 1
+                    if p.current_wait_streak > p.longest_continuous_wait:
+                        p.longest_continuous_wait = p.current_wait_streak
                     if is_new_dispatch:
                         p.bypass_count += 1
+                else:
+                    p.current_wait_streak = 0
 
             if process.first_run_time == -1:
                 process.first_run_time = self.time
