@@ -1,0 +1,28 @@
+{
+  "experiment_timestamp": "2026-11-01T13:52:10.130966",
+  "git_commit_hash": "873b89028ca9abcd9d516bb0f96c863d81a444f0",
+  "python_version": "3.14.5 (main, May 12 2026, 01:59:30)  [MINGW GCC UCRT 16.1.0 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "scales": [
+    "small",
+    "medium",
+    "large",
+    "very_large",
+    "stress"
+  ],
+  "categories": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+  ],
+  "trials_per_combination": 30,
+  "total_workloads": 1050,
+  "total_simulations": 4200,
+  "all_invariants_verified": true,
+  "duration_seconds": 1353.97,
+  "output_directory": "C:\\Users\\ujval\\Desktop\\Projects\\StarveGuard\\results\\performance_evaluation"
+}

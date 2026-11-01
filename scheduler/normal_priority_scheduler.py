@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional, Tuple
 from scheduler.process import Process
 
@@ -18,6 +19,8 @@ class NormalPriorityScheduler:
         self.time = 0
         self.gantt_chart: List[Tuple[str, int]] = []
         self._last_running_pid: Optional[str] = None
+        self.scheduling_decisions: int = 0
+        self.decision_time_sec: float = 0.0
 
     def get_ready_processes(self) -> List[Process]:
         return [
@@ -40,7 +43,10 @@ class NormalPriorityScheduler:
             return self.gantt_chart
 
         while any(p.remaining_time > 0 for p in self.processes):
+            _t0 = time.perf_counter()
             process = self.select_process()
+            self.decision_time_sec += (time.perf_counter() - _t0)
+            self.scheduling_decisions += 1
 
             if process is None:
                 self.gantt_chart.append(("IDLE", self.time))

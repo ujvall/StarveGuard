@@ -117,3 +117,75 @@ class MetricsCalculator:
     def priority_changed_count(self) -> int:
         """Processes whose priority was altered by aging."""
         return self.protected_process_count()
+
+    def starvation_percentage(self, detector=None) -> float:
+        """Percentage of processes that crossed the starvation threshold."""
+        if not self.processes:
+            return 0.0
+        return (self.starved_process_count(detector=detector) / len(self.processes)) * 100.0
+
+    def starved_average_waiting_time(self, detector=None) -> float:
+        """Average waiting time among processes that crossed the starvation threshold."""
+        if detector is not None:
+            starved = [p for p in self.processes if detector.is_starving(p)]
+        else:
+            starved = [p for p in self.processes if p.starvation_detected]
+        if not starved:
+            return 0.0
+        return sum(p.waiting_time for p in starved) / len(starved)
+
+    def starved_maximum_waiting_time(self, detector=None) -> int:
+        """Maximum waiting time among processes that crossed the starvation threshold."""
+        if detector is not None:
+            starved = [p for p in self.processes if detector.is_starving(p)]
+        else:
+            starved = [p for p in self.processes if p.starvation_detected]
+        if not starved:
+            return 0
+        return max(p.waiting_time for p in starved)
+
+    def cpu_utilization(self, scheduler) -> float:
+        """
+        Measures CPU Utilization: (Total CPU Busy Time / Total Simulation Time) * 100.
+        Correctly accounts for IDLE periods.
+        """
+        if not scheduler or scheduler.time <= 0:
+            return 0.0
+        busy_ticks = sum(1 for pid, _ in scheduler.gantt_chart if pid != "IDLE")
+        return (busy_ticks / scheduler.time) * 100.0
+
+    def throughput(self, scheduler) -> float:
+        """
+        Measures Throughput: Number of Completed Processes / Total Simulation Time.
+        Reported in completed processes per clock tick.
+        """
+        if not scheduler or scheduler.time <= 0:
+            return 0.0
+        completed = sum(1 for p in self.processes if p.remaining_time == 0)
+        return completed / scheduler.time
+
+    def scheduling_overhead(self, scheduler) -> dict:
+        """
+        Measures simulator decision-making overhead:
+            - total_decisions: total scheduling decisions evaluated
+            - total_decision_time_sec: wall-clock seconds spent in decision logic
+            - avg_decision_time_us: mean microseconds per scheduling decision
+            - priority_evaluations: total candidate processes evaluated for aging
+        """
+        if not scheduler:
+            return {
+                "total_decisions": 0,
+                "total_decision_time_sec": 0.0,
+                "avg_decision_time_us": 0.0,
+                "priority_evaluations": 0,
+            }
+        decisions = getattr(scheduler, "scheduling_decisions", 0)
+        total_sec = getattr(scheduler, "decision_time_sec", 0.0)
+        evals = getattr(scheduler, "priority_evaluations", 0)
+        avg_us = (total_sec / decisions * 1_000_000.0) if decisions > 0 else 0.0
+        return {
+            "total_decisions": decisions,
+            "total_decision_time_sec": total_sec,
+            "avg_decision_time_us": avg_us,
+            "priority_evaluations": evals,
+        }

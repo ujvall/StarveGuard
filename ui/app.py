@@ -1,5 +1,8 @@
+import csv
 import os
+import subprocess
 import sys
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -674,6 +677,365 @@ btn_graph_fairness = tk.Button(
     command=lambda: show_graph("fairness")
 )
 btn_graph_fairness.pack(side="left", padx=10)
+
+# =============================================================
+# PERFORMANCE EVALUATION & BENCHMARKING (4-POLICY MONTE CARLO)
+# =============================================================
+eval_card = tk.LabelFrame(
+    scrollable_frame,
+    text="  PERFORMANCE EVALUATION & BENCHMARKING (4-POLICY MONTE CARLO MODULE)  ",
+    font=("Tahoma", 9, "bold"),
+    fg="#000000",
+    bg="#F0F0F0",
+    padx=18,
+    pady=12,
+    relief="groove",
+    bd=2
+)
+eval_card.pack(fill="x", padx=20, pady=(6, 20))
+
+tk.Label(
+    eval_card,
+    text="Scientifically compare Normal Priority, Capped Aging (+3), Continuous Aging (K=5), and TTCA across multi-scale workloads:",
+    font=("Tahoma", 9),
+    fg="#000000",
+    bg="#F0F0F0"
+).pack(anchor="w", pady=(0, 8))
+
+# Controls frame
+eval_ctrl_frame = tk.Frame(eval_card, bg="#F0F0F0")
+eval_ctrl_frame.pack(fill="x", pady=(0, 8))
+
+tk.Label(eval_ctrl_frame, text="Workload Scale:", font=("Tahoma", 9, "bold"), bg="#F0F0F0").pack(side="left", padx=(0, 4))
+eval_scale_combo = ttk.Combobox(
+    eval_ctrl_frame,
+    values=["All Scales", "small (10)", "medium (50)", "large (100)", "very_large (250)", "stress (500)"],
+    state="readonly",
+    width=14,
+    font=("Tahoma", 9)
+)
+eval_scale_combo.set("All Scales")
+eval_scale_combo.pack(side="left", padx=(0, 14))
+
+tk.Label(eval_ctrl_frame, text="Category:", font=("Tahoma", 9, "bold"), bg="#F0F0F0").pack(side="left", padx=(0, 4))
+eval_cat_combo = ttk.Combobox(
+    eval_ctrl_frame,
+    values=[
+        "All Categories",
+        "A (Balanced)",
+        "B (Priority Skew)",
+        "C (Burst Mixture)",
+        "D (Heavy Contention)",
+        "E (Staggered)",
+        "F (Starvation-Prone)",
+        "G (Mixed Realistic)"
+    ],
+    state="readonly",
+    width=18,
+    font=("Tahoma", 9)
+)
+eval_cat_combo.set("All Categories")
+eval_cat_combo.pack(side="left", padx=(0, 14))
+
+tk.Label(eval_ctrl_frame, text="Trials:", font=("Tahoma", 9, "bold"), bg="#F0F0F0").pack(side="left", padx=(0, 4))
+eval_trials_combo = ttk.Combobox(
+    eval_ctrl_frame,
+    values=["30", "10", "5"],
+    state="readonly",
+    width=5,
+    font=("Tahoma", 9)
+)
+eval_trials_combo.set("30")
+eval_trials_combo.pack(side="left", padx=(0, 14))
+
+# Actions row
+eval_act_frame = tk.Frame(eval_card, bg="#F0F0F0")
+eval_act_frame.pack(fill="x", pady=(0, 8))
+
+def run_benchmark_thread():
+    scale_raw = eval_scale_combo.get().split()[0].lower()
+    cat_raw = eval_cat_combo.get().split()[0].upper()
+    try:
+        trials = int(eval_trials_combo.get())
+    except ValueError:
+        trials = 30
+
+    from results.workload_generator import SCALE_SIZES, WORKLOAD_CATEGORIES
+    scales = list(SCALE_SIZES.keys()) if scale_raw == "all" else [scale_raw]
+    categories = list(WORKLOAD_CATEGORIES.keys()) if cat_raw == "ALL" else [cat_raw]
+
+    btn_run_eval.config(state="disabled")
+    eval_progress["value"] = 0
+    set_eval_status(f"Starting benchmark ({len(scales)} scales, {len(categories)} categories, {trials} trials)...", "#1D4ED8")
+
+    def worker():
+        try:
+            from results.benchmark_engine import BenchmarkEngine
+            engine = BenchmarkEngine(
+                scales=scales,
+                categories=categories,
+                trials_per_combination=trials
+            )
+            def on_progress(done, total, msg):
+                pct = (done / total) * 100.0
+                root.after(0, lambda: update_eval_progress(pct, msg))
+
+            engine.run_benchmark(progress_callback=on_progress)
+            root.after(0, on_benchmark_done)
+        except Exception as exc:
+            root.after(0, lambda: on_benchmark_error(str(exc)))
+
+    threading.Thread(target=worker, daemon=True).start()
+
+def update_eval_progress(pct, msg):
+    eval_progress["value"] = pct
+    eval_status_lbl.config(text=msg, fg="#1D4ED8")
+
+def on_benchmark_done():
+    eval_progress["value"] = 100
+    set_eval_status("Benchmark completed successfully! All 12 graphs generated and data updated.", "#059669")
+    btn_run_eval.config(state="normal")
+    load_eval_table()
+    messagebox.showinfo("Benchmark Completed", "Benchmark evaluation completed successfully!\n12 publication-quality graphs generated in results/performance_evaluation/graphs.")
+
+def on_benchmark_error(err):
+    set_eval_status(f"Benchmark error: {err}", "#DC2626")
+    btn_run_eval.config(state="normal")
+    messagebox.showerror("Benchmark Error", f"An error occurred during benchmark execution:\n{err}")
+
+def set_eval_status(msg, color="#475569"):
+    eval_status_lbl.config(text=msg, fg=color)
+
+def open_evaluation_graphs_window():
+    graphs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "performance_evaluation", "graphs"))
+    if not os.path.exists(graphs_dir) or not os.listdir(graphs_dir):
+        messagebox.showinfo(
+            "Evaluation Graphs Not Generated",
+            "Evaluation graphs have not been generated yet.\nPlease click 'Run Benchmark Suite' first."
+        )
+        return
+
+    graph_files = sorted([f for f in os.listdir(graphs_dir) if f.endswith(".png")])
+    if not graph_files:
+        messagebox.showinfo("No Graphs", "No graph PNG files found in results/performance_evaluation/graphs.")
+        return
+
+    top = tk.Toplevel(root)
+    top.title("StarveGuard - Publication Benchmark Charts (12 Figures)")
+    top.geometry("1100x720")
+    top.minsize(850, 550)
+    top.configure(bg="#F0F0F0")
+
+    sel_frame = tk.Frame(top, bg="#F0F0F0", pady=6, padx=12)
+    sel_frame.pack(fill="x")
+
+    tk.Label(sel_frame, text="Select Graph:", font=("Tahoma", 9, "bold"), bg="#F0F0F0").pack(side="left", padx=(0, 6))
+    graph_combo = ttk.Combobox(sel_frame, values=graph_files, state="readonly", width=50, font=("Tahoma", 9))
+    graph_combo.set(graph_files[0])
+    graph_combo.pack(side="left", padx=(0, 10))
+
+    canvas_frame = tk.Frame(top, bg="#FFFFFF", bd=1, relief="sunken")
+    canvas_frame.pack(fill="both", expand=True, padx=12, pady=(0, 6))
+
+    img_label = tk.Label(canvas_frame, bg="#FFFFFF")
+    img_label.pack(fill="both", expand=True)
+
+    top._current_img = None
+
+    def load_selected_graph(*args):
+        fname = graph_combo.get()
+        fpath = os.path.join(graphs_dir, fname)
+        if os.path.exists(fpath):
+            try:
+                photo = tk.PhotoImage(file=fpath)
+                if photo.width() > 1150:
+                    photo = photo.subsample(2, 2)
+                top._current_img = photo
+                img_label.config(image=photo, text="")
+            except Exception as e:
+                img_label.config(image="", text=f"Error loading image: {e}")
+
+    graph_combo.bind("<<ComboboxSelected>>", load_selected_graph)
+
+    def prev_graph():
+        idx = graph_combo.current()
+        if idx > 0:
+            graph_combo.current(idx - 1)
+            load_selected_graph()
+
+    def next_graph():
+        idx = graph_combo.current()
+        if idx < len(graph_files) - 1:
+            graph_combo.current(idx + 1)
+            load_selected_graph()
+
+    btn_prev = tk.Button(sel_frame, text="◀ Previous", font=("Tahoma", 8), command=prev_graph)
+    btn_prev.pack(side="left", padx=4)
+
+    btn_next = tk.Button(sel_frame, text="Next ▶", font=("Tahoma", 8), command=next_graph)
+    btn_next.pack(side="left", padx=4)
+
+    load_selected_graph()
+
+def open_results_folder():
+    res_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "performance_evaluation"))
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir, exist_ok=True)
+    try:
+        if sys.platform == "win32":
+            os.startfile(res_dir)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", res_dir])
+        else:
+            subprocess.Popen(["xdg-open", res_dir])
+    except Exception as e:
+        messagebox.showinfo("Results Directory", f"Results are stored in:\n{res_dir}")
+
+btn_run_eval = tk.Button(
+    eval_act_frame,
+    text="▶ Run Benchmark Suite",
+    font=("Tahoma", 9, "bold"),
+    bg="#1D4ED8",
+    fg="#FFFFFF",
+    activebackground="#1E40AF",
+    activeforeground="#FFFFFF",
+    relief="raised",
+    bd=2,
+    cursor="hand2",
+    padx=12,
+    pady=4,
+    command=run_benchmark_thread
+)
+btn_run_eval.pack(side="left", padx=(0, 10))
+
+btn_view_eval_graphs = tk.Button(
+    eval_act_frame,
+    text="📊 View Evaluation Graphs (12 Figures)",
+    font=("Tahoma", 9, "bold"),
+    bg="#059669",
+    fg="#FFFFFF",
+    activebackground="#047857",
+    activeforeground="#FFFFFF",
+    relief="raised",
+    bd=2,
+    cursor="hand2",
+    padx=12,
+    pady=4,
+    command=open_evaluation_graphs_window
+)
+btn_view_eval_graphs.pack(side="left", padx=10)
+
+btn_open_results = tk.Button(
+    eval_act_frame,
+    text="📁 Open Results Folder",
+    font=("Tahoma", 9),
+    bg="#F0F0F0",
+    fg="#000000",
+    activebackground="#E0E0E0",
+    relief="raised",
+    bd=2,
+    cursor="hand2",
+    padx=10,
+    pady=4,
+    command=open_results_folder
+)
+btn_open_results.pack(side="left", padx=10)
+
+# Progress bar and status
+eval_prog_frame = tk.Frame(eval_card, bg="#F0F0F0")
+eval_prog_frame.pack(fill="x", pady=(0, 8))
+
+eval_progress = ttk.Progressbar(eval_prog_frame, orient="horizontal", mode="determinate")
+eval_progress.pack(fill="x", pady=(0, 4))
+
+eval_status_lbl = tk.Label(
+    eval_prog_frame,
+    text="Ready. Select parameters and click 'Run Benchmark Suite' to execute.",
+    font=("Tahoma", 8),
+    fg="#475569",
+    bg="#F0F0F0",
+    anchor="w"
+)
+eval_status_lbl.pack(fill="x")
+
+# Evaluation Table (Treeview)
+eval_tree_frame = tk.Frame(eval_card, bg="#FFFFFF", bd=1, relief="sunken")
+eval_tree_frame.pack(fill="both", expand=True)
+
+eval_tree_scroll = ttk.Scrollbar(eval_tree_frame, orient="vertical")
+eval_tree = ttk.Treeview(
+    eval_tree_frame,
+    columns=(
+        "scale", "category", "policy", "avg_wait", "avg_tat", "avg_resp",
+        "max_wait", "fairness", "starved_pct", "overhead_us", "wait_delta"
+    ),
+    show="headings",
+    height=8,
+    yscrollcommand=eval_tree_scroll.set
+)
+eval_tree_scroll.config(command=eval_tree.yview)
+
+eval_cols = [
+    ("scale", "Scale", 75),
+    ("category", "Cat", 55),
+    ("policy", "Policy", 125),
+    ("avg_wait", "Avg Wait (ticks)", 105),
+    ("avg_tat", "Avg TAT (ticks)", 100),
+    ("avg_resp", "Avg Resp (ticks)", 105),
+    ("max_wait", "Max Wait", 80),
+    ("fairness", "Fairness", 75),
+    ("starved_pct", "Starved %", 80),
+    ("overhead_us", "Overhead (μs)", 95),
+    ("wait_delta", "Wait Δ vs Normal", 120),
+]
+for col_id, col_text, col_w in eval_cols:
+    eval_tree.heading(col_id, text=col_text)
+    eval_tree.column(col_id, width=col_w, anchor="center")
+
+eval_tree.pack(side="left", fill="both", expand=True)
+eval_tree_scroll.pack(side="right", fill="y")
+
+def load_eval_table():
+    for item in eval_tree.get_children():
+        eval_tree.delete(item)
+
+    agg_csv = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "performance_evaluation", "aggregate_summary.csv"))
+    pct_csv = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results", "performance_evaluation", "percentage_comparison.csv"))
+
+    if not os.path.exists(agg_csv):
+        eval_tree.insert("", "end", values=("-", "-", "No benchmark results found. Run Benchmark Suite.", "-", "-", "-", "-", "-", "-", "-", "-"))
+        return
+
+    # Load percentage deltas lookup
+    delta_lookup = {}
+    if os.path.exists(pct_csv):
+        with open(pct_csv, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                delta_lookup[(r["scale"], r["category"], r["policy"])] = r.get("average_waiting_formatted", "-")
+
+    with open(agg_csv, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            scale = r["scale"]
+            cat = r["category"]
+            pol = r["policy"]
+            pol_disp = r.get("policy_display", pol)
+            wait_mean = f"{float(r['average_waiting_mean']):.2f}"
+            tat_mean = f"{float(r['average_turnaround_mean']):.2f}"
+            resp_mean = f"{float(r['average_response_mean']):.2f}"
+            max_wait = f"{float(r['maximum_waiting_mean']):.1f}"
+            fairness = f"{float(r['fairness_mean']):.3f}"
+            starved_pct = f"{float(r['starvation_percentage_mean']):.1f}%"
+            overhead_us = f"{float(r['avg_decision_time_us_mean']):.2f}"
+            wait_delta = delta_lookup.get((scale, cat, pol), "Baseline (0.0%)" if pol == "normal" else "-")
+
+            eval_tree.insert("", "end", values=(
+                scale.capitalize(), cat, pol_disp, wait_mean, tat_mean, resp_mean,
+                max_wait, fairness, starved_pct, overhead_us, wait_delta
+            ))
+
+load_eval_table()
 
 
 def extract_segments(gantt_data):

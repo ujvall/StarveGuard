@@ -1,0 +1,8 @@
+Category,Name,Description
+A,Balanced,"Uniformly distributed priorities (1-10), burst times (2-20), staggered arrivals."
+B,Priority Skew,"Concentration in lower priorities (75% prio 7-10, burst 15-30; 25% prio 1-4, burst 3-8)."
+C,Short and Long Burst Mixture,"Bimodal distribution: 50% short interactive (1-4 ticks), 50% long CPU-bound (25-50 ticks)."
+D,Heavy Contention,"Dense clustered arrivals (t in [0, 5]), creating high immediate ready-queue competition."
+E,Staggered Arrivals,Processes arrive in wave clusters with distinct idle gaps between arrival phases.
+F,Starvation-Prone,Initial lower-priority batch jobs trapped behind continuous stream of higher-priority tasks.
+G,Mixed Realistic Workload,"Realistic multi-tier mix (40% interactive, 35% normal, 25% batch) with dynamic arrival bursts."

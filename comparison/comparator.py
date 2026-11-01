@@ -41,6 +41,10 @@ class SchedulerComparator:
         detector = StarvationDetector()
         # In normal scheduling, evaluate how many processes crossed starvation threshold (waiting >= 20)
         starved_in_normal = sum(detector.is_starving(p) for p in processes)
+        starved_procs = [p for p in processes if detector.is_starving(p)]
+        starved_avg_wt = sum(p.waiting_time for p in starved_procs) / len(starved_procs) if starved_procs else 0.0
+        starved_max_wt = max((p.waiting_time for p in starved_procs), default=0)
+        overhead = metrics.scheduling_overhead(scheduler)
 
         return {
             "policy": "normal",
@@ -53,9 +57,18 @@ class SchedulerComparator:
             "maximum_waiting": metrics.maximum_waiting_time(),
             "waiting_disparity": metrics.waiting_time_disparity(),
             "starved_processes": starved_in_normal,
+            "starvation_percentage": (starved_in_normal / len(processes) * 100.0) if processes else 0.0,
+            "starved_average_waiting": starved_avg_wt,
+            "starved_maximum_waiting": starved_max_wt,
             "protected_processes": 0,
             "aging_interventions": 0,
-            "fairness": metrics.fairness_index()
+            "fairness": metrics.fairness_index(),
+            "cpu_utilization": metrics.cpu_utilization(scheduler),
+            "throughput": metrics.throughput(scheduler),
+            "scheduling_decisions": overhead["total_decisions"],
+            "decision_time_sec": overhead["total_decision_time_sec"],
+            "avg_decision_time_us": overhead["avg_decision_time_us"],
+            "priority_evaluations": overhead["priority_evaluations"],
         }
 
     def run_starveguard(
@@ -84,6 +97,7 @@ class SchedulerComparator:
         scheduler.run()
 
         metrics = MetricsCalculator(processes)
+        overhead = metrics.scheduling_overhead(scheduler)
 
         return {
             "policy": aging_manager.policy_name,
@@ -98,10 +112,19 @@ class SchedulerComparator:
             "maximum_waiting": metrics.maximum_waiting_time(),
             "waiting_disparity": metrics.waiting_time_disparity(),
             "starved_processes": metrics.starved_process_count(),
+            "starvation_percentage": metrics.starvation_percentage(),
+            "starved_average_waiting": metrics.starved_average_waiting_time(),
+            "starved_maximum_waiting": metrics.starved_maximum_waiting_time(),
             "protected_processes": metrics.protected_process_count(),
             "priority_changed_count": metrics.priority_changed_count(),
             "aging_interventions": metrics.aging_intervention_count(scheduler),
-            "fairness": metrics.fairness_index()
+            "fairness": metrics.fairness_index(),
+            "cpu_utilization": metrics.cpu_utilization(scheduler),
+            "throughput": metrics.throughput(scheduler),
+            "scheduling_decisions": overhead["total_decisions"],
+            "decision_time_sec": overhead["total_decision_time_sec"],
+            "avg_decision_time_us": overhead["avg_decision_time_us"],
+            "priority_evaluations": overhead["priority_evaluations"],
         }
 
     def run_starveguard_continuous(

@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional, Tuple
 from scheduler.process import Process
 from starvation.detector import StarvationDetector
@@ -49,6 +50,9 @@ class PriorityScheduler:
                 floor=floor
             )
         self._last_running_pid: Optional[str] = None
+        self.scheduling_decisions: int = 0
+        self.decision_time_sec: float = 0.0
+        self.priority_evaluations: int = 0
 
     def get_ready_processes(self) -> List[Process]:
         return [
@@ -62,6 +66,7 @@ class PriorityScheduler:
         and applies priority aging.
         """
         for p in self.get_ready_processes():
+            self.priority_evaluations += 1
             score = self.detector.calculate_score(p)
             if self.detector.is_starving(p):
                 p.starvation_detected = True
@@ -99,10 +104,12 @@ class PriorityScheduler:
             return self.gantt_chart
 
         while any(p.remaining_time > 0 for p in self.processes):
+            _t0 = time.perf_counter()
             # Apply aging intervention before dispatch arbitration
             self.apply_starvation_prevention()
-
             process = self.select_process()
+            self.decision_time_sec += (time.perf_counter() - _t0)
+            self.scheduling_decisions += 1
 
             if process is None:
                 self.gantt_chart.append(("IDLE", self.time))
